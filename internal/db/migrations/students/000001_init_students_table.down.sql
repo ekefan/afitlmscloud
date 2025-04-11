@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS eligibility;
+
+DROP TABLE IF EXISTS students;
