@@ -6,6 +6,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
@@ -14,7 +15,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteEligibility(ctx context.Context, arg DeleteEligibilityParams) error
 	DeleteStudent(ctx context.Context, id int64) error
-	DeleteUser(ctx context.Context, id int64) error
+	DeleteUser(ctx context.Context, id int64) (sql.Result, error)
 	GetEligibility(ctx context.Context, arg GetEligibilityParams) (Eligibility, error)
 	GetStudentByID(ctx context.Context, id int64) (Student, error)
 	GetStudentByUserID(ctx context.Context, userID int64) (Student, error)

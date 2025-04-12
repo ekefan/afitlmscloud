@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -48,14 +49,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
+const deleteUser = `-- name: DeleteUser :execresult
 DELETE FROM users
 WHERE id = $1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
-	_, err := q.exec(ctx, q.deleteUserStmt, deleteUser, id)
-	return err
+func (q *Queries) DeleteUser(ctx context.Context, id int64) (sql.Result, error) {
+	return q.exec(ctx, q.deleteUserStmt, deleteUser, id)
 }
 
 const getUserByID = `-- name: GetUserByID :one

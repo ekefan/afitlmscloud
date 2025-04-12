@@ -9,7 +9,7 @@ import (
 
 type UserRespository interface {
 	CreateUser(ctx context.Context, arg db.CreateUserParams) (db.User, error)
-	DeleteUser(ctx context.Context, id int64) error
+	DeleteUser(ctx context.Context, id int64) (sql.Result, error)
 	GetUserByID(ctx context.Context, id int64) (db.User, error)
 	UpdateUser(ctx context.Context, arg db.UpdateUserParams) (db.User, error)
 }

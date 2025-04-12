@@ -24,6 +24,6 @@ SELECT * FROM users
 WHERE id = $1;
 
 
--- name: DeleteUser :exec
+-- name: DeleteUser :execresult
 DELETE FROM users
 WHERE id = $1;
