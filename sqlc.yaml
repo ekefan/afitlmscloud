@@ -2,11 +2,13 @@ version: "2"
 sql:
   - engine: "postgresql"
     queries: 
-      - "./internal/db/query/users"
-      - "./internal/db/query/students"
+      - "./internal/db/query/user"
+      - "./internal/db/query/student"
+      - "./internal/db/query/lecturer"
     schema:
-      - "./internal/db/migrations/users"
-      - "./internal/db/migrations/students"
+      - "./internal/db/migrations/user"
+      - "./internal/db/migrations/student"
+      - "./internal/db/migrations/lecturer"
     gen:
       go:
         package: "db"

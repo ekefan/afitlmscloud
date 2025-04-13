@@ -9,21 +9,38 @@ import (
 	"time"
 )
 
+type Availability struct {
+	ID           int64        `json:"id"`
+	CourseID     int64        `json:"course_id"`
+	LecturerID   int64        `json:"lecturer_id"`
+	Availability float64      `json:"availability"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
+}
+
 type Eligibility struct {
-	ID        int64        `json:"id"`
-	CourseID  int64        `json:"course_id"`
-	StudentID int64        `json:"student_id"`
-	Value     int32        `json:"value"`
-	MinValue  int32        `json:"min_value"`
-	UpdatedAt sql.NullTime `json:"updated_at"`
+	ID             int64        `json:"id"`
+	CourseID       int64        `json:"course_id"`
+	StudentID      int64        `json:"student_id"`
+	Eligibility    float64      `json:"eligibility"`
+	MinEligibility float64      `json:"min_eligibility"`
+	UpdatedAt      sql.NullTime `json:"updated_at"`
+}
+
+type Lecturer struct {
+	ID                      int64          `json:"id"`
+	UserID                  int64          `json:"user_id"`
+	BiometricTemplate       sql.NullString `json:"biometric_template"`
+	Courses                 []string       `json:"courses"`
+	CoursesActivelyTeaching []string       `json:"courses_actively_teaching"`
+	UpdatedAt               sql.NullTime   `json:"updated_at"`
 }
 
 type Student struct {
-	ID                int64        `json:"id"`
-	UserID            int64        `json:"user_id"`
-	Courses           []string     `json:"courses"`
-	BiometricTemplate []byte       `json:"biometric_template"`
-	UpdatedAt         sql.NullTime `json:"updated_at"`
+	ID                int64          `json:"id"`
+	UserID            int64          `json:"user_id"`
+	Courses           []string       `json:"courses"`
+	BiometricTemplate sql.NullString `json:"biometric_template"`
+	UpdatedAt         sql.NullTime   `json:"updated_at"`
 }
 
 type User struct {
