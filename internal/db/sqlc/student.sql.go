@@ -21,9 +21,9 @@ INSERT INTO students (
 `
 
 type CreateStudentParams struct {
-	UserID            int64          `json:"user_id"`
-	Courses           []string       `json:"courses"`
-	BiometricTemplate sql.NullString `json:"biometric_template"`
+	UserID            int64    `json:"user_id"`
+	Courses           []string `json:"courses"`
+	BiometricTemplate string   `json:"biometric_template"`
 }
 
 func (q *Queries) CreateStudent(ctx context.Context, arg CreateStudentParams) (Student, error) {

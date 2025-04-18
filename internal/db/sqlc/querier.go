@@ -20,6 +20,7 @@ type Querier interface {
 	DeleteLecturer(ctx context.Context, id int64) (sql.Result, error)
 	DeleteStudent(ctx context.Context, id int64) (sql.Result, error)
 	DeleteUser(ctx context.Context, id int64) (sql.Result, error)
+	EnrollUser(ctx context.Context, arg EnrollUserParams) (User, error)
 	GetAvailability(ctx context.Context, arg GetAvailabilityParams) (Availability, error)
 	GetAvailabilityByCourseId(ctx context.Context, courseID int64) (Availability, error)
 	GetEligibility(ctx context.Context, arg GetEligibilityParams) (Eligibility, error)

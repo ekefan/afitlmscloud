@@ -6,9 +6,7 @@ sql:
       - "./internal/db/query/student"
       - "./internal/db/query/lecturer"
     schema:
-      - "./internal/db/migrations/user"
-      - "./internal/db/migrations/student"
-      - "./internal/db/migrations/lecturer"
+      - "./internal/db/migrations/user"      
     gen:
       go:
         package: "db"

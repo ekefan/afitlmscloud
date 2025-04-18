@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/lib/pq"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -18,7 +20,7 @@ INSERT INTO users (
     sch_id
 ) VALUES (
     $1, $2, $3, $4
-) RETURNING id, full_name, email, sch_id, hashed_password, password_changed, updated_at, created_at
+) RETURNING id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
 `
 
 type CreateUserParams struct {
@@ -39,6 +41,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	err := row.Scan(
 		&i.ID,
 		&i.FullName,
+		pq.Array(&i.Roles),
+		&i.Enrolled,
 		&i.Email,
 		&i.SchID,
 		&i.HashedPassword,
@@ -58,8 +62,43 @@ func (q *Queries) DeleteUser(ctx context.Context, id int64) (sql.Result, error) 
 	return q.exec(ctx, q.deleteUserStmt, deleteUser, id)
 }
 
+const enrollUser = `-- name: EnrollUser :one
+UPDATE users
+SET
+    roles = $2,
+    enrolled = $3,
+    updated_at = now()
+WHERE id = $1
+    AND users.enrolled IS DISTINCT FROM TRUE
+RETURNING id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
+`
+
+type EnrollUserParams struct {
+	ID       int64    `json:"id"`
+	Roles    []string `json:"roles"`
+	Enrolled bool     `json:"enrolled"`
+}
+
+func (q *Queries) EnrollUser(ctx context.Context, arg EnrollUserParams) (User, error) {
+	row := q.queryRow(ctx, q.enrollUserStmt, enrollUser, arg.ID, pq.Array(arg.Roles), arg.Enrolled)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FullName,
+		pq.Array(&i.Roles),
+		&i.Enrolled,
+		&i.Email,
+		&i.SchID,
+		&i.HashedPassword,
+		&i.PasswordChanged,
+		&i.UpdatedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, full_name, email, sch_id, hashed_password, password_changed, updated_at, created_at FROM users
+SELECT id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at FROM users
 WHERE id = $1
 `
 
@@ -69,6 +108,8 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.FullName,
+		pq.Array(&i.Roles),
+		&i.Enrolled,
 		&i.Email,
 		&i.SchID,
 		&i.HashedPassword,
@@ -88,7 +129,7 @@ SET
     password_changed = $5,
     updated_at = now()
 WHERE id = $1
-RETURNING id, full_name, email, sch_id, hashed_password, password_changed, updated_at, created_at
+RETURNING id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
 `
 
 type UpdateUserParams struct {
@@ -111,6 +152,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 	err := row.Scan(
 		&i.ID,
 		&i.FullName,
+		pq.Array(&i.Roles),
+		&i.Enrolled,
 		&i.Email,
 		&i.SchID,
 		&i.HashedPassword,

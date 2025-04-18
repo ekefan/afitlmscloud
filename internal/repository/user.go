@@ -12,6 +12,7 @@ type UserRespository interface {
 	DeleteUser(ctx context.Context, id int64) (sql.Result, error)
 	GetUserByID(ctx context.Context, id int64) (db.User, error)
 	UpdateUser(ctx context.Context, arg db.UpdateUserParams) (db.User, error)
+	EnrollUser(ctx context.Context, arg db.EnrollUserParams) (db.User, error)
 }
 
 var _ UserRespository = (*UserStore)(nil)

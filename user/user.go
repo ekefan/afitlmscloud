@@ -14,9 +14,10 @@ import (
 	"github.com/lib/pq"
 )
 
+const DEFAULT_PASSWORD = "1234Afit"
+
 type CreateUserReq struct {
 	Fullname string `json:"fullname"`
-	Password string `json:"password"`
 	Email    string `json:"email"`
 	SchId    string `json:"sch_id"`
 }
@@ -31,18 +32,25 @@ type UserDTO struct {
 	ID              int64     `json:"id,omitempty"`
 	Fullname        string    `json:"fullname,omitempty"`
 	Password        string    `json:"passowrd,omitempty"`
+	Roles           []string  `json:"roles,omitempty"`
 	Email           string    `json:"email,omitempty"`
 	PasswordChanged bool      `json:"password_changed"`
 	CreatedAt       time.Time `json:"created_at,omitempty"`
 	UpdatedAt       time.Time `json:"updated_at,omitempty"`
 }
 type UserService struct {
-	repo repository.UserRespository
+	userRepo     repository.UserRespository
+	studentRepo  repository.StudentRepository
+	lecturerRepo repository.LecturerRepository
 }
 
-func NewUserService(userRepo repository.UserRespository) *UserService {
+func NewUserService(userRepo repository.UserRespository,
+	studentRepo repository.StudentRepository,
+	lecturerRepo repository.LecturerRepository) *UserService {
 	us := &UserService{
-		repo: userRepo,
+		userRepo:     userRepo,
+		studentRepo:  studentRepo,
+		lecturerRepo: lecturerRepo,
 	}
 	return us
 }
@@ -56,11 +64,11 @@ func (us *UserService) CreateUser(ctx *gin.Context) {
 		})
 	}
 	// TODO: Hash passwords, CrossOrigin stuff... Validation,
-	user, err := us.repo.CreateUser(ctx, db.CreateUserParams{
+	user, err := us.userRepo.CreateUser(ctx, db.CreateUserParams{
 		Email:          req.Email,
 		FullName:       req.Fullname,
-		HashedPassword: req.Password,
 		SchID:          req.SchId,
+		HashedPassword: DEFAULT_PASSWORD,
 	})
 	if err != nil {
 		slog.Error("Unhandled error here", "detals", err)
@@ -112,7 +120,7 @@ func (us *UserService) UpdateUser(ctx *gin.Context) {
 	}
 
 	// TODO: Hash passwords if provided,
-	user, err := us.repo.UpdateUser(ctx, db.UpdateUserParams{
+	user, err := us.userRepo.UpdateUser(ctx, db.UpdateUserParams{
 		ID:              int64(userId),
 		Email:           req.Email,
 		FullName:        req.Fullname,
@@ -165,7 +173,7 @@ func (us *UserService) DeleteUser(ctx *gin.Context) {
 		return
 	}
 
-	res, err := us.repo.DeleteUser(ctx, int64(userId))
+	res, err := us.userRepo.DeleteUser(ctx, int64(userId))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": fmt.Sprintf("failed to delete a user with id: %v", userId),
@@ -196,9 +204,9 @@ func (us *UserService) GetUser(ctx *gin.Context) {
 		return
 	}
 
-	user, err := us.repo.GetUserByID(ctx, int64(userId))
+	user, err := us.userRepo.GetUserByID(ctx, int64(userId))
 	if err != nil {
-		slog.Error("Unhandled repo error", "dtails", err)
+		slog.Error("Unhandled userRepo error", "dtails", err)
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, gin.H{
 				"error": fmt.Sprintf("user with id: %v not found", userId),

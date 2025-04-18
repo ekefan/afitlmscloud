@@ -16,8 +16,12 @@ type Server struct {
 func NewServer(dbConn *sql.DB) *Server {
 
 	server := &Server{
-		router:      gin.Default(),
-		userService: user.NewUserService(repository.NewUserStore(dbConn)),
+		router: gin.Default(),
+		userService: user.NewUserService(
+			repository.NewUserStore(dbConn),
+			repository.NewStudentStore(dbConn),
+			repository.NewLecturerStore(dbConn),
+		),
 	}
 	server.registerUserRoutes()
 	return server

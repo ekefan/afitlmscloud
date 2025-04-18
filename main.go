@@ -27,14 +27,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	userM, err := migrate.NewWithDatabaseInstance(
-		"file://./internal/db/migrations/users",
+	userM, uErr := migrate.NewWithDatabaseInstance(
+		"file://./internal/db/migrations/user",
 		"postgres", driver,
 	)
-	if err != nil {
-		log.Fatal(err)
+
+	if uErr != nil {
+		log.Fatalf("failed to load user migration: %v", uErr)
 	}
-	userM.Up()
+
+	if err := userM.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("user migration failed: %v", err)
+	}
+
 	// Ensure the connection is alive
 	if err := dbConn.Ping(); err != nil {
 		log.Fatal("Cannot reach the database: ", err)

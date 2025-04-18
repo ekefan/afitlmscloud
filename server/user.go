@@ -7,4 +7,6 @@ func (s *Server) registerUserRoutes() {
 	ur.GET("/:id", s.userService.GetUser)
 	ur.PUT("/:id", s.userService.UpdateUser)
 	ur.DELETE("/:id", s.userService.DeleteUser)
+
+	ur.POST("/:id/enrollment", s.userService.EnrollUser)
 }

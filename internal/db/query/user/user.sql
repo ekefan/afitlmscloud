@@ -19,6 +19,16 @@ SET
 WHERE id = $1
 RETURNING *;
 
+-- name: EnrollUser :one
+UPDATE users
+SET
+    roles = $2,
+    enrolled = $3,
+    updated_at = now()
+WHERE id = $1
+    AND users.enrolled IS DISTINCT FROM TRUE
+RETURNING *;
+
 -- name: GetUserByID :one
 SELECT * FROM users
 WHERE id = $1;

@@ -27,25 +27,27 @@ type Eligibility struct {
 }
 
 type Lecturer struct {
-	ID                      int64          `json:"id"`
-	UserID                  int64          `json:"user_id"`
-	BiometricTemplate       sql.NullString `json:"biometric_template"`
-	Courses                 []string       `json:"courses"`
-	CoursesActivelyTeaching []string       `json:"courses_actively_teaching"`
-	UpdatedAt               sql.NullTime   `json:"updated_at"`
+	ID                      int64        `json:"id"`
+	UserID                  int64        `json:"user_id"`
+	BiometricTemplate       string       `json:"biometric_template"`
+	Courses                 []string     `json:"courses"`
+	CoursesActivelyTeaching []string     `json:"courses_actively_teaching"`
+	UpdatedAt               sql.NullTime `json:"updated_at"`
 }
 
 type Student struct {
-	ID                int64          `json:"id"`
-	UserID            int64          `json:"user_id"`
-	Courses           []string       `json:"courses"`
-	BiometricTemplate sql.NullString `json:"biometric_template"`
-	UpdatedAt         sql.NullTime   `json:"updated_at"`
+	ID                int64        `json:"id"`
+	UserID            int64        `json:"user_id"`
+	Courses           []string     `json:"courses"`
+	BiometricTemplate string       `json:"biometric_template"`
+	UpdatedAt         sql.NullTime `json:"updated_at"`
 }
 
 type User struct {
 	ID              int64        `json:"id"`
 	FullName        string       `json:"full_name"`
+	Roles           []string     `json:"roles"`
+	Enrolled        bool         `json:"enrolled"`
 	Email           string       `json:"email"`
 	SchID           string       `json:"sch_id"`
 	HashedPassword  string       `json:"hashed_password"`

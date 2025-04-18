@@ -21,10 +21,10 @@ INSERT INTO lecturers (
 `
 
 type CreateLecturerParams struct {
-	UserID                  int64          `json:"user_id"`
-	BiometricTemplate       sql.NullString `json:"biometric_template"`
-	Courses                 []string       `json:"courses"`
-	CoursesActivelyTeaching []string       `json:"courses_actively_teaching"`
+	UserID                  int64    `json:"user_id"`
+	BiometricTemplate       string   `json:"biometric_template"`
+	Courses                 []string `json:"courses"`
+	CoursesActivelyTeaching []string `json:"courses_actively_teaching"`
 }
 
 func (q *Queries) CreateLecturer(ctx context.Context, arg CreateLecturerParams) (Lecturer, error) {

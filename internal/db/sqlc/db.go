@@ -54,6 +54,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteUserStmt, err = db.PrepareContext(ctx, deleteUser); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteUser: %w", err)
 	}
+	if q.enrollUserStmt, err = db.PrepareContext(ctx, enrollUser); err != nil {
+		return nil, fmt.Errorf("error preparing query EnrollUser: %w", err)
+	}
 	if q.getAvailabilityStmt, err = db.PrepareContext(ctx, getAvailability); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAvailability: %w", err)
 	}
@@ -158,6 +161,11 @@ func (q *Queries) Close() error {
 	if q.deleteUserStmt != nil {
 		if cerr := q.deleteUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteUserStmt: %w", cerr)
+		}
+	}
+	if q.enrollUserStmt != nil {
+		if cerr := q.enrollUserStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing enrollUserStmt: %w", cerr)
 		}
 	}
 	if q.getAvailabilityStmt != nil {
@@ -294,6 +302,7 @@ type Queries struct {
 	deleteLecturerStmt              *sql.Stmt
 	deleteStudentStmt               *sql.Stmt
 	deleteUserStmt                  *sql.Stmt
+	enrollUserStmt                  *sql.Stmt
 	getAvailabilityStmt             *sql.Stmt
 	getAvailabilityByCourseIdStmt   *sql.Stmt
 	getEligibilityStmt              *sql.Stmt
@@ -327,6 +336,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteLecturerStmt:              q.deleteLecturerStmt,
 		deleteStudentStmt:               q.deleteStudentStmt,
 		deleteUserStmt:                  q.deleteUserStmt,
+		enrollUserStmt:                  q.enrollUserStmt,
 		getAvailabilityStmt:             q.getAvailabilityStmt,
 		getAvailabilityByCourseIdStmt:   q.getAvailabilityByCourseIdStmt,
 		getEligibilityStmt:              q.getEligibilityStmt,
