@@ -29,6 +29,7 @@ type Querier interface {
 	GetLecturerByUserID(ctx context.Context, userID int64) (Lecturer, error)
 	GetStudentByID(ctx context.Context, id int64) (Student, error)
 	GetStudentByUserID(ctx context.Context, userID int64) (Student, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	ListAvailabilityForLecturer(ctx context.Context, lecturerID int64) ([]Availability, error)
 	ListEligibilityForStudent(ctx context.Context, studentID int64) ([]Eligibility, error)
@@ -37,7 +38,8 @@ type Querier interface {
 	UpdateEligibility(ctx context.Context, arg UpdateEligibilityParams) (Eligibility, error)
 	UpdateLecturerCourses(ctx context.Context, arg UpdateLecturerCoursesParams) (Lecturer, error)
 	UpdateStudentCourses(ctx context.Context, arg UpdateStudentCoursesParams) (Student, error)
-	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) (User, error)
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

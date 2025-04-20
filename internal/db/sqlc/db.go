@@ -81,6 +81,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getStudentByUserIDStmt, err = db.PrepareContext(ctx, getStudentByUserID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetStudentByUserID: %w", err)
 	}
+	if q.getUserByEmailStmt, err = db.PrepareContext(ctx, getUserByEmail); err != nil {
+		return nil, fmt.Errorf("error preparing query GetUserByEmail: %w", err)
+	}
 	if q.getUserByIDStmt, err = db.PrepareContext(ctx, getUserByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByID: %w", err)
 	}
@@ -105,8 +108,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateStudentCoursesStmt, err = db.PrepareContext(ctx, updateStudentCourses); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateStudentCourses: %w", err)
 	}
-	if q.updateUserStmt, err = db.PrepareContext(ctx, updateUser); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateUser: %w", err)
+	if q.updateUserEmailStmt, err = db.PrepareContext(ctx, updateUserEmail); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateUserEmail: %w", err)
+	}
+	if q.updateUserPasswordStmt, err = db.PrepareContext(ctx, updateUserPassword); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateUserPassword: %w", err)
 	}
 	return &q, nil
 }
@@ -208,6 +214,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getStudentByUserIDStmt: %w", cerr)
 		}
 	}
+	if q.getUserByEmailStmt != nil {
+		if cerr := q.getUserByEmailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getUserByEmailStmt: %w", cerr)
+		}
+	}
 	if q.getUserByIDStmt != nil {
 		if cerr := q.getUserByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserByIDStmt: %w", cerr)
@@ -248,9 +259,14 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing updateStudentCoursesStmt: %w", cerr)
 		}
 	}
-	if q.updateUserStmt != nil {
-		if cerr := q.updateUserStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateUserStmt: %w", cerr)
+	if q.updateUserEmailStmt != nil {
+		if cerr := q.updateUserEmailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateUserEmailStmt: %w", cerr)
+		}
+	}
+	if q.updateUserPasswordStmt != nil {
+		if cerr := q.updateUserPasswordStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateUserPasswordStmt: %w", cerr)
 		}
 	}
 	return err
@@ -311,6 +327,7 @@ type Queries struct {
 	getLecturerByUserIDStmt         *sql.Stmt
 	getStudentByIDStmt              *sql.Stmt
 	getStudentByUserIDStmt          *sql.Stmt
+	getUserByEmailStmt              *sql.Stmt
 	getUserByIDStmt                 *sql.Stmt
 	listAvailabilityForLecturerStmt *sql.Stmt
 	listEligibilityForStudentStmt   *sql.Stmt
@@ -319,7 +336,8 @@ type Queries struct {
 	updateEligibilityStmt           *sql.Stmt
 	updateLecturerCoursesStmt       *sql.Stmt
 	updateStudentCoursesStmt        *sql.Stmt
-	updateUserStmt                  *sql.Stmt
+	updateUserEmailStmt             *sql.Stmt
+	updateUserPasswordStmt          *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -345,6 +363,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getLecturerByUserIDStmt:         q.getLecturerByUserIDStmt,
 		getStudentByIDStmt:              q.getStudentByIDStmt,
 		getStudentByUserIDStmt:          q.getStudentByUserIDStmt,
+		getUserByEmailStmt:              q.getUserByEmailStmt,
 		getUserByIDStmt:                 q.getUserByIDStmt,
 		listAvailabilityForLecturerStmt: q.listAvailabilityForLecturerStmt,
 		listEligibilityForStudentStmt:   q.listEligibilityForStudentStmt,
@@ -353,6 +372,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateEligibilityStmt:           q.updateEligibilityStmt,
 		updateLecturerCoursesStmt:       q.updateLecturerCoursesStmt,
 		updateStudentCoursesStmt:        q.updateStudentCoursesStmt,
-		updateUserStmt:                  q.updateUserStmt,
+		updateUserEmailStmt:             q.updateUserEmailStmt,
+		updateUserPasswordStmt:          q.updateUserPasswordStmt,
 	}
 }

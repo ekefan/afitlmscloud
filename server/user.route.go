@@ -5,8 +5,10 @@ func (s *Server) registerUserRoutes() {
 
 	ur.POST("/", s.userService.CreateUser)
 	ur.GET("/:id", s.userService.GetUser)
-	ur.PUT("/:id", s.userService.UpdateUser)
+	ur.PATCH("/:id/password", s.userService.UpdateUserPassword)
+	ur.PATCH("/:id/email", s.userService.UpdateUserEmail)
 	ur.DELETE("/:id", s.userService.DeleteUser)
 
 	ur.POST("/:id/enrollment", s.userService.EnrollUser)
+	ur.POST("/auth", s.userService.LoginUser)
 }

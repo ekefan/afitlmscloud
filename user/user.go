@@ -1,7 +1,9 @@
 package user
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,6 +16,10 @@ import (
 	"github.com/lib/pq"
 )
 
+var (
+	ErrIncorrectPassword = errors.New("incorrect password, user not authorized")
+)
+
 const DEFAULT_PASSWORD = "1234Afit"
 
 type CreateUserReq struct {
@@ -22,10 +28,14 @@ type CreateUserReq struct {
 	SchId    string `json:"sch_id"`
 }
 
-type UpdatedUserReq struct {
-	Fullname string `json:"fullname,omitempty"`
-	Password string `json:"passowrd,omitempty"`
-	Email    string `json:"email,omitempty"`
+type ChangeUserPasswordReq struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
+}
+
+type ChangeUserEmailReq struct {
+	OldEmail string `json:"old_email" binding:"required,email"`
+	NewEmail string `json:"new_email" binding:"required,email"`
 }
 
 type UserDTO struct {
@@ -33,6 +43,7 @@ type UserDTO struct {
 	Fullname        string    `json:"fullname,omitempty"`
 	Password        string    `json:"passowrd,omitempty"`
 	Roles           []string  `json:"roles,omitempty"`
+	SchID           string    `json:"sch_id"`
 	Email           string    `json:"email,omitempty"`
 	PasswordChanged bool      `json:"password_changed"`
 	CreatedAt       time.Time `json:"created_at,omitempty"`
@@ -96,69 +107,6 @@ func (us *UserService) CreateUser(ctx *gin.Context) {
 	fmt.Println(user)
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "created a new user",
-	})
-}
-
-func (us *UserService) UpdateUser(ctx *gin.Context) {
-	fmt.Println("updating a user")
-
-	userId, err := strconv.Atoi(ctx.Param("id"))
-	if userId < 1 || err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "valid integer user id is required",
-		})
-		return
-	}
-	var req UpdatedUserReq
-	if err := ctx.BindJSON(&req); err != nil || (req.Email == "" &&
-		req.Fullname == "" &&
-		req.Password == "") {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request",
-		})
-		return
-	}
-
-	// TODO: Hash passwords if provided,
-	user, err := us.userRepo.UpdateUser(ctx, db.UpdateUserParams{
-		ID:              int64(userId),
-		Email:           req.Email,
-		FullName:        req.Fullname,
-		PasswordChanged: true,
-		HashedPassword:  req.Password,
-	})
-	if err != nil {
-		slog.Error("Unhandled error here", "detals", err)
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": "no user exists with such user id",
-			})
-			return
-		}
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
-				column := ""
-				if pqErr.Constraint == "users_email_key" {
-					column = "email"
-				}
-				if pqErr.Constraint == "users_sch_id_key" {
-					column = "sch_id"
-				}
-				msg := fmt.Sprintf("%v already exists", column)
-				ctx.JSON(http.StatusBadRequest, gin.H{
-					"error": msg,
-				})
-			default:
-				slog.Error("Unhandled pq error", "details", pqErr)
-			}
-			return
-		}
-		return
-	}
-	fmt.Println(user)
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "creating a new user",
 	})
 }
 
@@ -228,4 +176,112 @@ func (us *UserService) GetUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, resp)
+}
+
+type Tokens struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+type LoginResponse struct {
+	UserData UserDTO `json:"user_data"`
+	Tokens   Tokens  `json:"tokens"`
+}
+
+func (us *UserService) loginUser(ctx context.Context, data LoginRequest) (LoginResponse, error) {
+	user, err := us.userRepo.GetUserByEmail(ctx, data.Email)
+	resp := LoginResponse{}
+	if err != nil {
+		//TODO: handle common db errors
+		return resp, err
+	}
+
+	if user.HashedPassword != data.Password {
+		return resp, ErrIncorrectPassword
+	}
+
+	// Create new user session
+	resp.UserData = UserDTO{
+		ID:              user.ID,
+		Fullname:        user.FullName,
+		SchID:           user.SchID,
+		Roles:           user.Roles,
+		Email:           user.Email,
+		PasswordChanged: user.PasswordChanged,
+		UpdatedAt:       user.UpdatedAt.Time,
+		CreatedAt:       user.CreatedAt,
+	}
+	resp.Tokens = Tokens{
+		AccessToken:  "not yet implemented",
+		RefreshToken: "not yet implemented",
+	}
+	return resp, nil
+}
+
+type ChangeUserPasswordData struct {
+	UserId      int64
+	OldPassword string
+	NewPassword string
+}
+
+// TODO: handle hashing passwords and comparing hashes
+func (us *UserService) changeUserPassword(ctx context.Context, data ChangeUserPasswordData) (UserDTO, error) {
+	userResponse := UserDTO{}
+
+	user, err := us.userRepo.GetUserByID(ctx, data.UserId)
+	if err != nil {
+		return userResponse, err
+	}
+
+	if user.HashedPassword != data.OldPassword {
+		return userResponse, ErrIncorrectPassword
+	}
+
+	uu, err := us.userRepo.UpdateUserPassword(ctx, db.UpdateUserPasswordParams{
+		ID:             data.UserId,
+		HashedPassword: data.NewPassword,
+	})
+	if err != nil {
+		return userResponse, err
+	}
+	userResponse = UserDTO{
+		ID:              uu.ID,
+		Fullname:        uu.FullName,
+		SchID:           uu.SchID,
+		Roles:           uu.Roles,
+		Email:           uu.Email,
+		PasswordChanged: uu.PasswordChanged,
+		UpdatedAt:       uu.UpdatedAt.Time,
+		CreatedAt:       uu.CreatedAt,
+	}
+	return userResponse, nil
+}
+
+type ChangeUserEmailData struct {
+	UserID   int64
+	OldEmail string
+	NewEmail string
+}
+
+func (us *UserService) changeUserEmail(ctx context.Context, data ChangeUserEmailData) (UserDTO, error) {
+	userResponse := UserDTO{}
+
+	uu, err := us.userRepo.UpdateUserEmail(ctx, db.UpdateUserEmailParams{
+		ID:       data.UserID,
+		NewEmail: data.NewEmail,
+		OldEmail: data.OldEmail,
+	})
+	if err != nil {
+		return userResponse, err
+	}
+	userResponse = UserDTO{
+		ID:              uu.ID,
+		Fullname:        uu.FullName,
+		SchID:           uu.SchID,
+		Roles:           uu.Roles,
+		Email:           uu.Email,
+		PasswordChanged: uu.PasswordChanged,
+		UpdatedAt:       uu.UpdatedAt.Time,
+		CreatedAt:       uu.CreatedAt,
+	}
+	return userResponse, nil
 }
