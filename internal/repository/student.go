@@ -15,15 +15,15 @@ type StudentRepository interface {
 	UpdateStudentCourses(ctx context.Context, arg db.UpdateStudentCoursesParams) (db.Student, error)
 }
 
-var _ StudentRepository = (*StudentStore)(nil)
+var _ StudentRepository = (*studentStore)(nil)
 
-type StudentStore struct {
+type studentStore struct {
 	dbConn *sql.DB
 	*db.Queries
 }
 
 func NewStudentStore(dbConn *sql.DB) StudentRepository {
-	return &StudentStore{
+	return &studentStore{
 		dbConn:  dbConn,
 		Queries: db.New(dbConn),
 	}

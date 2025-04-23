@@ -17,6 +17,27 @@ type Availability struct {
 	UpdatedAt    sql.NullTime `json:"updated_at"`
 }
 
+type Course struct {
+	ID                       int64  `json:"id"`
+	Name                     string `json:"name"`
+	Faculty                  string `json:"faculty"`
+	Department               string `json:"department"`
+	Level                    string `json:"level"`
+	CourseCode               string `json:"course_code"`
+	NumOfLecturesPerSemester int32  `json:"num_of_lectures_per_semester"`
+	ActiveLecturerID         int64  `json:"active_lecturer_id"`
+}
+
+type CourseLecturer struct {
+	CourseCode string `json:"course_code"`
+	LecturerID int64  `json:"lecturer_id"`
+}
+
+type CourseRegisteredStudent struct {
+	CourseCode string `json:"course_code"`
+	StudentID  int64  `json:"student_id"`
+}
+
 type Eligibility struct {
 	ID             int64        `json:"id"`
 	CourseID       int64        `json:"course_id"`

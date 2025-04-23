@@ -27,6 +27,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createAvailabilityStmt, err = db.PrepareContext(ctx, createAvailability); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateAvailability: %w", err)
 	}
+	if q.createCourseStmt, err = db.PrepareContext(ctx, createCourse); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateCourse: %w", err)
+	}
 	if q.createEligibilityStmt, err = db.PrepareContext(ctx, createEligibility); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateEligibility: %w", err)
 	}
@@ -54,6 +57,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteUserStmt, err = db.PrepareContext(ctx, deleteUser); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteUser: %w", err)
 	}
+	if q.dropCourseStmt, err = db.PrepareContext(ctx, dropCourse); err != nil {
+		return nil, fmt.Errorf("error preparing query DropCourse: %w", err)
+	}
 	if q.enrollUserStmt, err = db.PrepareContext(ctx, enrollUser); err != nil {
 		return nil, fmt.Errorf("error preparing query EnrollUser: %w", err)
 	}
@@ -62,6 +68,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getAvailabilityByCourseIdStmt, err = db.PrepareContext(ctx, getAvailabilityByCourseId); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAvailabilityByCourseId: %w", err)
+	}
+	if q.getCourseFilteredStmt, err = db.PrepareContext(ctx, getCourseFiltered); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCourseFiltered: %w", err)
 	}
 	if q.getEligibilityStmt, err = db.PrepareContext(ctx, getEligibility); err != nil {
 		return nil, fmt.Errorf("error preparing query GetEligibility: %w", err)
@@ -93,6 +102,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listEligibilityForStudentStmt, err = db.PrepareContext(ctx, listEligibilityForStudent); err != nil {
 		return nil, fmt.Errorf("error preparing query ListEligibilityForStudent: %w", err)
 	}
+	if q.registerCourseStmt, err = db.PrepareContext(ctx, registerCourse); err != nil {
+		return nil, fmt.Errorf("error preparing query RegisterCourse: %w", err)
+	}
 	if q.setMinEligibilityStmt, err = db.PrepareContext(ctx, setMinEligibility); err != nil {
 		return nil, fmt.Errorf("error preparing query SetMinEligibility: %w", err)
 	}
@@ -122,6 +134,11 @@ func (q *Queries) Close() error {
 	if q.createAvailabilityStmt != nil {
 		if cerr := q.createAvailabilityStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createAvailabilityStmt: %w", cerr)
+		}
+	}
+	if q.createCourseStmt != nil {
+		if cerr := q.createCourseStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createCourseStmt: %w", cerr)
 		}
 	}
 	if q.createEligibilityStmt != nil {
@@ -169,6 +186,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteUserStmt: %w", cerr)
 		}
 	}
+	if q.dropCourseStmt != nil {
+		if cerr := q.dropCourseStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing dropCourseStmt: %w", cerr)
+		}
+	}
 	if q.enrollUserStmt != nil {
 		if cerr := q.enrollUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing enrollUserStmt: %w", cerr)
@@ -182,6 +204,11 @@ func (q *Queries) Close() error {
 	if q.getAvailabilityByCourseIdStmt != nil {
 		if cerr := q.getAvailabilityByCourseIdStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getAvailabilityByCourseIdStmt: %w", cerr)
+		}
+	}
+	if q.getCourseFilteredStmt != nil {
+		if cerr := q.getCourseFilteredStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCourseFilteredStmt: %w", cerr)
 		}
 	}
 	if q.getEligibilityStmt != nil {
@@ -232,6 +259,11 @@ func (q *Queries) Close() error {
 	if q.listEligibilityForStudentStmt != nil {
 		if cerr := q.listEligibilityForStudentStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listEligibilityForStudentStmt: %w", cerr)
+		}
+	}
+	if q.registerCourseStmt != nil {
+		if cerr := q.registerCourseStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing registerCourseStmt: %w", cerr)
 		}
 	}
 	if q.setMinEligibilityStmt != nil {
@@ -309,6 +341,7 @@ type Queries struct {
 	db                              DBTX
 	tx                              *sql.Tx
 	createAvailabilityStmt          *sql.Stmt
+	createCourseStmt                *sql.Stmt
 	createEligibilityStmt           *sql.Stmt
 	createLecturerStmt              *sql.Stmt
 	createStudentStmt               *sql.Stmt
@@ -318,9 +351,11 @@ type Queries struct {
 	deleteLecturerStmt              *sql.Stmt
 	deleteStudentStmt               *sql.Stmt
 	deleteUserStmt                  *sql.Stmt
+	dropCourseStmt                  *sql.Stmt
 	enrollUserStmt                  *sql.Stmt
 	getAvailabilityStmt             *sql.Stmt
 	getAvailabilityByCourseIdStmt   *sql.Stmt
+	getCourseFilteredStmt           *sql.Stmt
 	getEligibilityStmt              *sql.Stmt
 	getEligibilityByCourseIdStmt    *sql.Stmt
 	getLecturerByIDStmt             *sql.Stmt
@@ -331,6 +366,7 @@ type Queries struct {
 	getUserByIDStmt                 *sql.Stmt
 	listAvailabilityForLecturerStmt *sql.Stmt
 	listEligibilityForStudentStmt   *sql.Stmt
+	registerCourseStmt              *sql.Stmt
 	setMinEligibilityStmt           *sql.Stmt
 	updateAvailabilityStmt          *sql.Stmt
 	updateEligibilityStmt           *sql.Stmt
@@ -345,6 +381,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:                              tx,
 		tx:                              tx,
 		createAvailabilityStmt:          q.createAvailabilityStmt,
+		createCourseStmt:                q.createCourseStmt,
 		createEligibilityStmt:           q.createEligibilityStmt,
 		createLecturerStmt:              q.createLecturerStmt,
 		createStudentStmt:               q.createStudentStmt,
@@ -354,9 +391,11 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteLecturerStmt:              q.deleteLecturerStmt,
 		deleteStudentStmt:               q.deleteStudentStmt,
 		deleteUserStmt:                  q.deleteUserStmt,
+		dropCourseStmt:                  q.dropCourseStmt,
 		enrollUserStmt:                  q.enrollUserStmt,
 		getAvailabilityStmt:             q.getAvailabilityStmt,
 		getAvailabilityByCourseIdStmt:   q.getAvailabilityByCourseIdStmt,
+		getCourseFilteredStmt:           q.getCourseFilteredStmt,
 		getEligibilityStmt:              q.getEligibilityStmt,
 		getEligibilityByCourseIdStmt:    q.getEligibilityByCourseIdStmt,
 		getLecturerByIDStmt:             q.getLecturerByIDStmt,
@@ -367,6 +406,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getUserByIDStmt:                 q.getUserByIDStmt,
 		listAvailabilityForLecturerStmt: q.listAvailabilityForLecturerStmt,
 		listEligibilityForStudentStmt:   q.listEligibilityForStudentStmt,
+		registerCourseStmt:              q.registerCourseStmt,
 		setMinEligibilityStmt:           q.setMinEligibilityStmt,
 		updateAvailabilityStmt:          q.updateAvailabilityStmt,
 		updateEligibilityStmt:           q.updateEligibilityStmt,

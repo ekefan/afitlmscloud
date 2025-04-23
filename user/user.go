@@ -285,3 +285,5 @@ func (us *UserService) changeUserEmail(ctx context.Context, data ChangeUserEmail
 	}
 	return userResponse, nil
 }
+
+// TODO: add functionality to add a course to the database....

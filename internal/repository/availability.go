@@ -16,15 +16,15 @@ type AvailabilityRepository interface {
 	DeleteAvailability(ctx context.Context, arg db.DeleteAvailabilityParams) (sql.Result, error)
 }
 
-var _ AvailabilityRepository = (*AvailabilityStore)(nil)
+var _ AvailabilityRepository = (*availabilityStore)(nil)
 
-type AvailabilityStore struct {
+type availabilityStore struct {
 	dbConn *sql.DB
 	*db.Queries
 }
 
 func NewAvailabilityStore(dbConn *sql.DB) AvailabilityRepository {
-	return &AvailabilityStore{
+	return &availabilityStore{
 		dbConn:  dbConn,
 		Queries: db.New(dbConn),
 	}

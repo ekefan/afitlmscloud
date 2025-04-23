@@ -15,15 +15,15 @@ type LecturerRepository interface {
 	DeleteLecturer(ctx context.Context, id int64) (sql.Result, error)
 }
 
-var _ LecturerRepository = (*LecturerStore)(nil)
+var _ LecturerRepository = (*lecturerStore)(nil)
 
-type LecturerStore struct {
+type lecturerStore struct {
 	dbConn *sql.DB
 	*db.Queries
 }
 
 func NewLecturerStore(dbConn *sql.DB) LecturerRepository {
-	return &LecturerStore{
+	return &lecturerStore{
 		dbConn:  dbConn,
 		Queries: db.New(dbConn),
 	}

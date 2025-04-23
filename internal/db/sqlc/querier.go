@@ -11,6 +11,7 @@ import (
 
 type Querier interface {
 	CreateAvailability(ctx context.Context, arg CreateAvailabilityParams) (Availability, error)
+	CreateCourse(ctx context.Context, arg CreateCourseParams) (Course, error)
 	CreateEligibility(ctx context.Context, arg CreateEligibilityParams) (Eligibility, error)
 	CreateLecturer(ctx context.Context, arg CreateLecturerParams) (Lecturer, error)
 	CreateStudent(ctx context.Context, arg CreateStudentParams) (Student, error)
@@ -20,9 +21,11 @@ type Querier interface {
 	DeleteLecturer(ctx context.Context, id int64) (sql.Result, error)
 	DeleteStudent(ctx context.Context, id int64) (sql.Result, error)
 	DeleteUser(ctx context.Context, id int64) (sql.Result, error)
+	DropCourse(ctx context.Context, arg DropCourseParams) (sql.Result, error)
 	EnrollUser(ctx context.Context, arg EnrollUserParams) (User, error)
 	GetAvailability(ctx context.Context, arg GetAvailabilityParams) (Availability, error)
 	GetAvailabilityByCourseId(ctx context.Context, courseID int64) (Availability, error)
+	GetCourseFiltered(ctx context.Context, arg GetCourseFilteredParams) ([]Course, error)
 	GetEligibility(ctx context.Context, arg GetEligibilityParams) (Eligibility, error)
 	GetEligibilityByCourseId(ctx context.Context, courseID int64) (Eligibility, error)
 	GetLecturerByID(ctx context.Context, id int64) (Lecturer, error)
@@ -33,6 +36,7 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	ListAvailabilityForLecturer(ctx context.Context, lecturerID int64) ([]Availability, error)
 	ListEligibilityForStudent(ctx context.Context, studentID int64) ([]Eligibility, error)
+	RegisterCourse(ctx context.Context, arg RegisterCourseParams) error
 	SetMinEligibility(ctx context.Context, arg SetMinEligibilityParams) (Eligibility, error)
 	UpdateAvailability(ctx context.Context, arg UpdateAvailabilityParams) (Availability, error)
 	UpdateEligibility(ctx context.Context, arg UpdateEligibilityParams) (Eligibility, error)

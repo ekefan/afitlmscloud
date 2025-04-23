@@ -17,15 +17,15 @@ type UserRespository interface {
 	EnrollUser(ctx context.Context, arg db.EnrollUserParams) (db.User, error)
 }
 
-var _ UserRespository = (*UserStore)(nil)
+var _ UserRespository = (*userStore)(nil)
 
-type UserStore struct {
+type userStore struct {
 	dbConn *sql.DB
 	*db.Queries
 }
 
 func NewUserStore(dbConn *sql.DB) UserRespository {
-	return &UserStore{
+	return &userStore{
 		dbConn:  dbConn,
 		Queries: db.New(dbConn),
 	}

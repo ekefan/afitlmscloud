@@ -16,15 +16,15 @@ type EligibilityRepository interface {
 	SetMinEligibility(ctx context.Context, arg db.SetMinEligibilityParams) (db.Eligibility, error)
 }
 
-var _ EligibilityRepository = (*EligibilityStore)(nil)
+var _ EligibilityRepository = (*eligibilityStore)(nil)
 
-type EligibilityStore struct {
+type eligibilityStore struct {
 	dbConn *sql.DB
 	*db.Queries
 }
 
 func NewEligibilityStore(dbConn *sql.DB) EligibilityRepository {
-	return &EligibilityStore{
+	return &eligibilityStore{
 		dbConn:  dbConn,
 		Queries: db.New(dbConn),
 	}
