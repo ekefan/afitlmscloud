@@ -7,122 +7,34 @@ package db
 
 import (
 	"context"
-	"database/sql"
 )
 
-const createEligibility = `-- name: CreateEligibility :one
-INSERT INTO eligibilities (
-    course_id, student_id, eligibility, min_eligibility
-) VALUES (
-    $1, $2, $3, $4
-) RETURNING id, course_id, student_id, eligibility, min_eligibility, updated_at
+const getStudentEligibilityForAllCourses = `-- name: GetStudentEligibilityForAllCourses :many
+SELECT
+    c.name As course_name,
+    cs.eligibility,
+    c.course_code
+FROM course_students cs
+JOIN courses c ON c.course_code = cs.course_code
+WHERE cs.student_id = $1
 `
 
-type CreateEligibilityParams struct {
-	CourseID       int64   `json:"course_id"`
-	StudentID      int64   `json:"student_id"`
-	Eligibility    float64 `json:"eligibility"`
-	MinEligibility float64 `json:"min_eligibility"`
+type GetStudentEligibilityForAllCoursesRow struct {
+	CourseName  string  `json:"course_name"`
+	Eligibility float64 `json:"eligibility"`
+	CourseCode  string  `json:"course_code"`
 }
 
-func (q *Queries) CreateEligibility(ctx context.Context, arg CreateEligibilityParams) (Eligibility, error) {
-	row := q.queryRow(ctx, q.createEligibilityStmt, createEligibility,
-		arg.CourseID,
-		arg.StudentID,
-		arg.Eligibility,
-		arg.MinEligibility,
-	)
-	var i Eligibility
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.StudentID,
-		&i.Eligibility,
-		&i.MinEligibility,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const deleteEligibility = `-- name: DeleteEligibility :execresult
-DELETE FROM eligibilities
-WHERE course_id = $1 AND student_id = $2
-`
-
-type DeleteEligibilityParams struct {
-	CourseID  int64 `json:"course_id"`
-	StudentID int64 `json:"student_id"`
-}
-
-func (q *Queries) DeleteEligibility(ctx context.Context, arg DeleteEligibilityParams) (sql.Result, error) {
-	return q.exec(ctx, q.deleteEligibilityStmt, deleteEligibility, arg.CourseID, arg.StudentID)
-}
-
-const getEligibility = `-- name: GetEligibility :one
-SELECT id, course_id, student_id, eligibility, min_eligibility, updated_at FROM eligibilities
-WHERE course_id = $1 AND student_id = $2
-`
-
-type GetEligibilityParams struct {
-	CourseID  int64 `json:"course_id"`
-	StudentID int64 `json:"student_id"`
-}
-
-func (q *Queries) GetEligibility(ctx context.Context, arg GetEligibilityParams) (Eligibility, error) {
-	row := q.queryRow(ctx, q.getEligibilityStmt, getEligibility, arg.CourseID, arg.StudentID)
-	var i Eligibility
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.StudentID,
-		&i.Eligibility,
-		&i.MinEligibility,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getEligibilityByCourseId = `-- name: GetEligibilityByCourseId :one
-SELECT id, course_id, student_id, eligibility, min_eligibility, updated_at FROM eligibilities
-WHERE course_id = $1
-`
-
-func (q *Queries) GetEligibilityByCourseId(ctx context.Context, courseID int64) (Eligibility, error) {
-	row := q.queryRow(ctx, q.getEligibilityByCourseIdStmt, getEligibilityByCourseId, courseID)
-	var i Eligibility
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.StudentID,
-		&i.Eligibility,
-		&i.MinEligibility,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const listEligibilityForStudent = `-- name: ListEligibilityForStudent :many
-SELECT id, course_id, student_id, eligibility, min_eligibility, updated_at FROM eligibilities
-WHERE student_id = $1
-`
-
-func (q *Queries) ListEligibilityForStudent(ctx context.Context, studentID int64) ([]Eligibility, error) {
-	rows, err := q.query(ctx, q.listEligibilityForStudentStmt, listEligibilityForStudent, studentID)
+func (q *Queries) GetStudentEligibilityForAllCourses(ctx context.Context, studentID int64) ([]GetStudentEligibilityForAllCoursesRow, error) {
+	rows, err := q.query(ctx, q.getStudentEligibilityForAllCoursesStmt, getStudentEligibilityForAllCourses, studentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Eligibility{}
+	items := []GetStudentEligibilityForAllCoursesRow{}
 	for rows.Next() {
-		var i Eligibility
-		if err := rows.Scan(
-			&i.ID,
-			&i.CourseID,
-			&i.StudentID,
-			&i.Eligibility,
-			&i.MinEligibility,
-			&i.UpdatedAt,
-		); err != nil {
+		var i GetStudentEligibilityForAllCoursesRow
+		if err := rows.Scan(&i.CourseName, &i.Eligibility, &i.CourseCode); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -134,58 +46,4 @@ func (q *Queries) ListEligibilityForStudent(ctx context.Context, studentID int64
 		return nil, err
 	}
 	return items, nil
-}
-
-const setMinEligibility = `-- name: SetMinEligibility :one
-UPDATE eligibilities
-SET eligibility = $3, updated_at = now()
-WHERE course_id = $1 AND student_id = $2
-RETURNING id, course_id, student_id, eligibility, min_eligibility, updated_at
-`
-
-type SetMinEligibilityParams struct {
-	CourseID    int64   `json:"course_id"`
-	StudentID   int64   `json:"student_id"`
-	Eligibility float64 `json:"eligibility"`
-}
-
-func (q *Queries) SetMinEligibility(ctx context.Context, arg SetMinEligibilityParams) (Eligibility, error) {
-	row := q.queryRow(ctx, q.setMinEligibilityStmt, setMinEligibility, arg.CourseID, arg.StudentID, arg.Eligibility)
-	var i Eligibility
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.StudentID,
-		&i.Eligibility,
-		&i.MinEligibility,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateEligibility = `-- name: UpdateEligibility :one
-UPDATE eligibilities
-SET eligibility = $3, updated_at = now()
-WHERE course_id = $1 AND student_id = $2
-RETURNING id, course_id, student_id, eligibility, min_eligibility, updated_at
-`
-
-type UpdateEligibilityParams struct {
-	CourseID    int64   `json:"course_id"`
-	StudentID   int64   `json:"student_id"`
-	Eligibility float64 `json:"eligibility"`
-}
-
-func (q *Queries) UpdateEligibility(ctx context.Context, arg UpdateEligibilityParams) (Eligibility, error) {
-	row := q.queryRow(ctx, q.updateEligibilityStmt, updateEligibility, arg.CourseID, arg.StudentID, arg.Eligibility)
-	var i Eligibility
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.StudentID,
-		&i.Eligibility,
-		&i.MinEligibility,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

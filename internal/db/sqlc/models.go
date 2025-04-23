@@ -33,18 +33,11 @@ type CourseLecturer struct {
 	LecturerID int64  `json:"lecturer_id"`
 }
 
-type CourseRegisteredStudent struct {
-	CourseCode string `json:"course_code"`
-	StudentID  int64  `json:"student_id"`
-}
-
-type Eligibility struct {
-	ID             int64        `json:"id"`
-	CourseID       int64        `json:"course_id"`
-	StudentID      int64        `json:"student_id"`
-	Eligibility    float64      `json:"eligibility"`
-	MinEligibility float64      `json:"min_eligibility"`
-	UpdatedAt      sql.NullTime `json:"updated_at"`
+type CourseStudent struct {
+	CourseCode  string       `json:"course_code"`
+	StudentID   int64        `json:"student_id"`
+	Eligibility float64      `json:"eligibility"`
+	UpdatedAt   sql.NullTime `json:"updated_at"`
 }
 
 type Lecturer struct {

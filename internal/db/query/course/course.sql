@@ -15,7 +15,7 @@ WHERE faculty = $1 AND department = $2 AND level = $3;
 
 
 -- name: RegisterCourse :exec
-INSERT INTO course_registered_students (
+INSERT INTO course_students (
     course_code,
     student_id
 ) VALUES (
@@ -23,5 +23,5 @@ INSERT INTO course_registered_students (
 );
 
 -- name: DropCourse :execresult
-DELETE FROM course_registered_students
+DELETE FROM course_students
 WHERE course_code = $1 AND student_id = $2;

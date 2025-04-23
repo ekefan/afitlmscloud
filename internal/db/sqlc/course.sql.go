@@ -53,7 +53,7 @@ func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) (Cou
 }
 
 const dropCourse = `-- name: DropCourse :execresult
-DELETE FROM course_registered_students
+DELETE FROM course_students
 WHERE course_code = $1 AND student_id = $2
 `
 
@@ -110,7 +110,7 @@ func (q *Queries) GetCourseFiltered(ctx context.Context, arg GetCourseFilteredPa
 }
 
 const registerCourse = `-- name: RegisterCourse :exec
-INSERT INTO course_registered_students (
+INSERT INTO course_students (
     course_code,
     student_id
 ) VALUES (

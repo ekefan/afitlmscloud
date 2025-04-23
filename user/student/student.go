@@ -5,17 +5,12 @@ import (
 	"log/slog"
 
 	"github.com/ekefan/afitlmscloud/course"
-	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
 	"github.com/ekefan/afitlmscloud/internal/repository"
 )
 
-type StudentServiceRepo interface {
-	repository.EligibilityRepository
-	repository.StudentRepository
-}
 type StudentService struct {
 	courseService course.CourseService
-	repo          StudentServiceRepo
+	repo          repository.StudentRepository
 }
 
 func NewStudentService(courseService course.CourseService) *StudentService {
@@ -52,33 +47,16 @@ func (s *StudentService) dropCourses(ctx context.Context, studentID int64, cours
 	return nil
 }
 
-type EligibilityResult struct {
-	StudentID   int64   `json:"student_id"`
-	CourseName  string  `json:"course_name"`
-	CourseCode  string  `json:"course_code"`
-	ELigibility float64 `json:"eligibility"`
-}
+type StudentEligibility map[int64][]course.Eligibility
 
-func (s *StudentService) checkEligibilityStatus(ctx context.Context, studentID int64, courses []course.Course) ([]EligibilityResult, error) {
-	res := []EligibilityResult{}
-	for _, c := range courses {
-		eligibility, err := s.repo.GetEligibility(ctx, db.GetEligibilityParams{
-			StudentID: studentID,
-			CourseID:  c.ID,
-		})
-		if err != nil {
-			slog.Error("Hanlde error when getting eligibility")
-			return []EligibilityResult{}, err
-		}
-
-		result := EligibilityResult{
-			StudentID:   studentID,
-			CourseName:  c.Name,
-			CourseCode:  c.CourseCode,
-			ELigibility: eligibility.Eligibility,
-		}
-		res = append(res, result)
+func (s *StudentService) checkEligibilityStatus(ctx context.Context, studentID int64, courses []course.Course) (StudentEligibility, error) {
+	courseEligibilities, err := s.courseService.GetStudentEligibilityForAllCourses(ctx, studentID)
+	if err != nil {
+		slog.Error("Hanlde error when getting eligibility")
+		return StudentEligibility{}, err
 	}
-
+	res := StudentEligibility{
+		studentID: courseEligibilities,
+	}
 	return res, nil
 }

@@ -20,10 +20,10 @@ CREATE TABLE course_lecturers (
     FOREIGN KEY (course_code) REFERENCES courses(course_code) ON DELETE CASCADE
 );
 
-CREATE TABLE course_registered_students (
+CREATE TABLE course_students (
     course_code VARCHAR(10),
     student_id BIGINT,
-    eligibility FLOAT NOT NULL,
+    eligibility FLOAT NOT NULL DEFAULT 0.00,
     updated_at TIMESTAMP DEFAULT now(),
 
     PRIMARY KEY (course_code, student_id),

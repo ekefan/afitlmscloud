@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrFailedToRegisterCourse = errors.New("failed to register course")
-	ErrFailedToDropCourse     = errors.New("failed to drop course")
+	ErrFailedToRegisterCourse                    = errors.New("failed to register course")
+	ErrFailedToDropCourse                        = errors.New("failed to drop course")
+	ErrFailedToGetStudentEligbilityForAllCourses = errors.New("faile to get student eligibility for all courses")
 )
 
 type Course struct {
@@ -64,4 +65,28 @@ func (csvc *CourseService) DropCourses(ctx context.Context, data StudentCourseDa
 		return ErrFailedToDropCourse
 	}
 	return nil
+}
+
+type Eligibility struct {
+	CourseCode  string
+	CourseName  string
+	Eligibility float64
+}
+
+func (csvc *CourseService) GetStudentEligibilityForAllCourses(ctx context.Context, studentID int64) ([]Eligibility, error) {
+	res, err := csvc.repo.GetStudentEligibilityForAllCourses(ctx, studentID)
+	if err != nil {
+		fmt.Println("failed to get student eligibility for all courses")
+		return []Eligibility{}, ErrFailedToGetStudentEligbilityForAllCourses
+	}
+
+	eligibility := []Eligibility{}
+	for _, e := range res {
+		eligibility = append(eligibility, Eligibility{
+			CourseCode:  e.CourseCode,
+			CourseName:  e.CourseName,
+			Eligibility: e.Eligibility,
+		})
+	}
+	return eligibility, nil
 }
