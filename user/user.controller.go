@@ -235,3 +235,70 @@ func (us *UserService) UpdateUserPassword(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, user)
 }
+
+type RegisterCourseReq struct {
+	CourseCodes []string `json:"course_code" binding:"required"`
+}
+
+func (us *UserService) RegisterCourses(ctx *gin.Context) {
+	userId, err := strconv.Atoi(ctx.Param("id"))
+	if userId < 1 || err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+
+	var req RegisterCourseReq
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request",
+		})
+		return
+	}
+	err = us.studentService.RegisterCourses(ctx, int64(userId), req.CourseCodes)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+}
+
+func (us *UserService) CheckEligibilityForAllRegisteredCourses(ctx *gin.Context) {
+	userId, err := strconv.Atoi(ctx.Param("id"))
+	if userId < 1 || err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+
+	studentEligibility, err := us.studentService.CheckEligibilityStatus(ctx, int64(userId))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, studentEligibility)
+}
+
+func (us *UserService) DropCoursesRegisteredByStudent(ctx *gin.Context) {
+	// TODO: how do I validate that the course code is valid
+	userId, idErr := strconv.Atoi(ctx.Param("id"))
+	courseCode := ctx.Param("course_code")
+	if userId < 1 || idErr != nil || courseCode == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+	err := us.studentService.DropCourses(ctx, int64(userId), []string{courseCode})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error,
+		})
+	}
+	ctx.Status(http.StatusAccepted)
+}

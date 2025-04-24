@@ -14,10 +14,10 @@ type Roles []string
 
 const (
 	// roles
-	student = iota
-	lecturer
-	qaAdmin
-	courseAdmin
+	studentRole = iota
+	lecturerRole
+	qaAdminRole
+	courseAdminRole
 )
 
 const (
@@ -35,13 +35,13 @@ var (
 
 func rolesToString(role int) string {
 	switch role {
-	case student:
+	case studentRole:
 		return "student"
-	case lecturer:
+	case lecturerRole:
 		return "lecturer"
-	case qaAdmin:
+	case qaAdminRole:
 		return "qa_admin"
-	case courseAdmin:
+	case courseAdminRole:
 		return "course_admin"
 	}
 	return ""
@@ -53,8 +53,8 @@ func rolesToString(role int) string {
 //
 //	The policy ensures that all Roles do not contain a student and qaAdmin role
 func (us *UserService) validateUserRolesPolicy(roles Roles) error {
-	if slices.Contains(roles, rolesToString(student)) &&
-		slices.Contains(roles, rolesToString(qaAdmin)) {
+	if slices.Contains(roles, rolesToString(studentRole)) &&
+		slices.Contains(roles, rolesToString(qaAdminRole)) {
 		return ErrRolesViolatesRolesPolicy
 	}
 	return nil
@@ -71,8 +71,8 @@ func (us *UserService) enrollUser(ctx context.Context, data EnrollmentData) erro
 	if err := us.validateUserRolesPolicy(data.Roles); err != nil {
 		return err
 	}
-	if (slices.Contains(data.Roles, rolesToString(student)) ||
-		slices.Contains(data.Roles, rolesToString(lecturer))) &&
+	if (slices.Contains(data.Roles, rolesToString(studentRole)) ||
+		slices.Contains(data.Roles, rolesToString(lecturerRole))) &&
 		data.BioMetricTemplate == "" {
 		return ErrNoBioMetricTemplate
 	}
@@ -87,7 +87,7 @@ func (us *UserService) enrollUser(ctx context.Context, data EnrollmentData) erro
 		return err
 	}
 
-	if slices.Contains(data.Roles, rolesToString(student)) {
+	if slices.Contains(data.Roles, rolesToString(studentRole)) {
 		slog.Info("creating a new student")
 		_, err := us.studentRepo.CreateStudent(ctx, db.CreateStudentParams{
 			UserID:            data.UserId,
@@ -99,7 +99,7 @@ func (us *UserService) enrollUser(ctx context.Context, data EnrollmentData) erro
 			return err
 		}
 	}
-	if slices.Contains(data.Roles, rolesToString(lecturer)) {
+	if slices.Contains(data.Roles, rolesToString(lecturerRole)) {
 		slog.Info("creating a new lecturer")
 		_, err := us.lecturerRepo.CreateLecturer(ctx, db.CreateLecturerParams{
 			UserID:            data.UserId,

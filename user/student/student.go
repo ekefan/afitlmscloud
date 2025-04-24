@@ -9,20 +9,22 @@ import (
 )
 
 type StudentService struct {
-	courseService course.CourseService
+	courseService *course.CourseService
 	repo          repository.StudentRepository
 }
 
-func NewStudentService(courseService course.CourseService) *StudentService {
+func NewStudentService(courseService *course.CourseService, repo repository.StudentRepository) *StudentService {
 	return &StudentService{
 		courseService: courseService,
+		repo:          repo,
 	}
 
 }
-func (s *StudentService) registerCourses(ctx context.Context, studentID int64, courses []course.Course) error {
-	for _, c := range courses {
+
+func (s *StudentService) RegisterCourses(ctx context.Context, studentID int64, courseCodes []string) error {
+	for _, c := range courseCodes {
 		err := s.courseService.RegisterCouse(ctx, course.StudentCourseData{
-			CourseCode: c.CourseCode,
+			CourseCode: c,
 			StudentID:  studentID,
 		})
 		if err != nil {
@@ -33,14 +35,14 @@ func (s *StudentService) registerCourses(ctx context.Context, studentID int64, c
 	return nil
 }
 
-func (s *StudentService) dropCourses(ctx context.Context, studentID int64, courses []course.Course) error {
-	for _, c := range courses {
+func (s *StudentService) DropCourses(ctx context.Context, studentID int64, courseCodes []string) error {
+	for _, c := range courseCodes {
 		err := s.courseService.DropCourses(ctx, course.StudentCourseData{
-			CourseCode: c.CourseCode,
+			CourseCode: c,
 			StudentID:  studentID,
 		})
 		if err != nil {
-			slog.Error("Handle error when registering courses")
+			slog.Error("Handle error when dropping courses courses", "error", err)
 			return err
 		}
 	}
@@ -49,10 +51,10 @@ func (s *StudentService) dropCourses(ctx context.Context, studentID int64, cours
 
 type StudentEligibility map[int64][]course.Eligibility
 
-func (s *StudentService) checkEligibilityStatus(ctx context.Context, studentID int64, courses []course.Course) (StudentEligibility, error) {
+func (s *StudentService) CheckEligibilityStatus(ctx context.Context, studentID int64) (StudentEligibility, error) {
 	courseEligibilities, err := s.courseService.GetStudentEligibilityForAllCourses(ctx, studentID)
 	if err != nil {
-		slog.Error("Hanlde error when getting eligibility")
+		slog.Error("Handle error when getting eligibility", "error", err)
 		return StudentEligibility{}, err
 	}
 	res := StudentEligibility{
