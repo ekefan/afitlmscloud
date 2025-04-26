@@ -41,3 +41,6 @@ func (s *Server) StartServer(addr ...string) {
 	}
 	s.router.Run(":" + port)
 }
+
+// TODO: handle authentications and authorization
+// TODO: handle validation of user_id or access_id for student/lecturer/user/course_codes

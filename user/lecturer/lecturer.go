@@ -61,7 +61,7 @@ func (ls *LecturerService) AssignLecturerToCourse(ctx context.Context, lecturerI
 
 func (ls *LecturerService) UnassignLecturerFromCourse(ctx context.Context, lecturerID int64, courseCodes []string) error {
 	for _, c := range courseCodes {
-		err := ls.courseService.DropCourses(ctx, course.UserCourseData{
+		err := ls.courseService.UnassignLecturerFromCourse(ctx, course.UserCourseData{
 			CourseCode: c,
 			UserID:     lecturerID,
 		})
@@ -85,4 +85,12 @@ func (ls *LecturerService) CheckAvailabilityStatus(ctx context.Context, lectuerI
 		lectuerID: courseAvailabilities,
 	}
 	return res, nil
+}
+
+func (ls *LecturerService) SetActiveLecturer(ctx context.Context, lecturerID int64, courseCode string) error {
+	err := ls.courseService.SetActiveLecturer(ctx, lecturerID, courseCode)
+	if err != nil {
+		return err
+	}
+	return nil
 }

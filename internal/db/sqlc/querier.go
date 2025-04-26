@@ -29,6 +29,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	RegisterCourse(ctx context.Context, arg RegisterCourseParams) error
+	SetActiveLecturer(ctx context.Context, arg SetActiveLecturerParams) error
 	UnassignLecturerFromCourse(ctx context.Context, arg UnassignLecturerFromCourseParams) (sql.Result, error)
 	UpdateLecturerCourses(ctx context.Context, arg UpdateLecturerCoursesParams) (Lecturer, error)
 	UpdateStudentCourses(ctx context.Context, arg UpdateStudentCoursesParams) (Student, error)

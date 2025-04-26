@@ -16,7 +16,8 @@ var (
 	ErrFailedToAssignCourse                      = errors.New("failed to assign course")
 	ErrFailedToUnAssignCourse                    = errors.New("failed to unassign course")
 	ErrFailedToGetAvailabilityForAllCourses      = errors.New("failed to get availability for all courses")
-	ErrActiveLecturerAlreadySetForThisCourse     = errors.New("failed to set active lecturer")
+	// ErrActiveLecturerAlreadySetForThisCourse     = errors.New("failed to set active lecturer")
+	ErrFailedToSetActiveLecturer = errors.New("failed to set active lecturer")
 )
 
 type CourseService struct {
@@ -67,7 +68,11 @@ func (csvc *CourseService) DropCourses(ctx context.Context, data UserCourseData)
 		slog.Error("failed to get the number of rows affected for dropping course", "error", err)
 		return rerr
 	}
-	if err != nil || numOfRowsAffected == 0 {
+	if numOfRowsAffected == 0 {
+		slog.Error("no course found to drop", "studentId", data.UserID, "courseCode", data.CourseCode)
+		return ErrFailedToDropCourse
+	}
+	if err != nil {
 		slog.Error("failed to perform course operation", "error", err)
 		return ErrFailedToDropCourse
 	}
@@ -136,4 +141,17 @@ func (csvc *CourseService) GetLecturerAvailabilityForAllCourses(ctx context.Cont
 		})
 	}
 	return availability, nil
+}
+
+func (csvc *CourseService) SetActiveLecturer(ctx context.Context, lecturerID int64, courseCode string) error {
+	err := csvc.repo.SetActiveLecturer(ctx, db.SetActiveLecturerParams{
+		ActiveLecturerID: lecturerID,
+		CourseCode:       courseCode})
+	if err != nil {
+		slog.Error("failed to set active lecturer id", "error", err)
+		return ErrFailedToSetActiveLecturer
+	}
+
+	// TODO: Send ActiveLecturerEvent...
+	return nil
 }

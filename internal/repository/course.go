@@ -15,6 +15,7 @@ type CourseRepository interface {
 	UnassignLecturerFromCourse(ctx context.Context, arg db.UnassignLecturerFromCourseParams) (sql.Result, error)
 	AssignLecturerToCourse(ctx context.Context, arg db.AssignLecturerToCourseParams) error
 	GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]db.GetLecturerAvailabilityForAllCoursesRow, error)
+	SetActiveLecturer(ctx context.Context, arg db.SetActiveLecturerParams) error
 }
 
 var _ CourseRepository = (*courseStrore)(nil)

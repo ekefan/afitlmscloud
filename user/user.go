@@ -25,9 +25,9 @@ var (
 const DEFAULT_PASSWORD = "1234Afit"
 
 type CreateUserReq struct {
-	Fullname string `json:"fullname"`
-	Email    string `json:"email"`
-	SchId    string `json:"sch_id"`
+	Fullname string `json:"fullname" binding:"required"`
+	Email    string `json:"email" binding:"email,required"`
+	SchId    string `json:"sch_id" binding:"required"`
 }
 
 type ChangeUserPasswordReq struct {
@@ -80,6 +80,7 @@ func (us *UserService) CreateUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid request",
 		})
+		return
 	}
 	// TODO: Hash passwords, CrossOrigin stuff... Validation,
 	user, err := us.userRepo.CreateUser(ctx, db.CreateUserParams{
@@ -111,9 +112,9 @@ func (us *UserService) CreateUser(ctx *gin.Context) {
 		}
 		return
 	}
-	fmt.Println(user)
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "created a new user",
+		"data":    user,
 	})
 }
 

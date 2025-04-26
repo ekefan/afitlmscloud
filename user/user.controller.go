@@ -25,6 +25,19 @@ type EnrollmentReq struct {
 	BioMetricTemplate string   `json:"biometric_template,omitempty"`
 }
 
+type AssignCourseReq struct {
+	CourseCodes []string `json:"course_codes" binding:"required"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type RegisterCourseReq struct {
+	CourseCodes []string `json:"course_codes" binding:"required"`
+}
+
 func (us *UserService) EnrollUser(ctx *gin.Context) {
 	var req EnrollmentReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -85,11 +98,6 @@ func (us *UserService) EnrollUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "user enrolled successfully",
 	})
-}
-
-type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
 }
 
 func (us *UserService) LoginUser(ctx *gin.Context) {
@@ -236,11 +244,8 @@ func (us *UserService) UpdateUserPassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
-type RegisterCourseReq struct {
-	CourseCodes []string `json:"course_code" binding:"required"`
-}
-
 func (us *UserService) RegisterCourses(ctx *gin.Context) {
+	// TODO: write middleware to check student role...
 	userId, err := strconv.Atoi(ctx.Param("id"))
 	if userId < 1 || err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -303,10 +308,6 @@ func (us *UserService) DropCoursesRegisteredByStudent(ctx *gin.Context) {
 	ctx.Status(http.StatusAccepted)
 }
 
-type AssignCourseReq struct {
-	CourseCodes []string
-}
-
 func (us *UserService) AssignCourses(ctx *gin.Context) {
 	userId, err := strconv.Atoi(ctx.Param("id"))
 	if userId < 1 || err != nil {
@@ -324,6 +325,7 @@ func (us *UserService) AssignCourses(ctx *gin.Context) {
 		return
 	}
 
+	fmt.Println(len(req.CourseCodes), req.CourseCodes)
 	err = us.lecturerService.AssignLecturerToCourse(ctx, int64(userId), req.CourseCodes)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -331,6 +333,7 @@ func (us *UserService) AssignCourses(ctx *gin.Context) {
 		})
 		return
 	}
+	ctx.Status(http.StatusAccepted)
 }
 
 func (us *UserService) CheckAvailabilityForAllAssignedCourses(ctx *gin.Context) {
@@ -362,6 +365,26 @@ func (us *UserService) UnassignCourses(ctx *gin.Context) {
 	}
 
 	err := us.lecturerService.UnassignLecturerFromCourse(ctx, int64(userId), []string{courseCode})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.Status(http.StatusAccepted)
+}
+
+func (us *UserService) SetActiveLecturer(ctx *gin.Context) {
+	userId, idErr := strconv.Atoi(ctx.Param("id"))
+	courseCode := ctx.Param("course_code")
+	if userId < 1 || idErr != nil || courseCode == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+
+	err := us.lecturerService.SetActiveLecturer(ctx, int64(userId), courseCode)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error,

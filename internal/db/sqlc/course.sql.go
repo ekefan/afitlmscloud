@@ -104,6 +104,23 @@ func (q *Queries) RegisterCourse(ctx context.Context, arg RegisterCourseParams) 
 	return err
 }
 
+const setActiveLecturer = `-- name: SetActiveLecturer :exec
+UPDATE courses 
+SET
+    active_lecturer_id = $1
+WHERE active_lecturer_id = 0 AND course_code = $2
+`
+
+type SetActiveLecturerParams struct {
+	ActiveLecturerID int64  `json:"active_lecturer_id"`
+	CourseCode       string `json:"course_code"`
+}
+
+func (q *Queries) SetActiveLecturer(ctx context.Context, arg SetActiveLecturerParams) error {
+	_, err := q.exec(ctx, q.setActiveLecturerStmt, setActiveLecturer, arg.ActiveLecturerID, arg.CourseCode)
+	return err
+}
+
 const unassignLecturerFromCourse = `-- name: UnassignLecturerFromCourse :execresult
 DELETE FROM course_lecturers
 WHERE course_code = $1 AND lecturer_id = $2

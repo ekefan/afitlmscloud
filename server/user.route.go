@@ -13,7 +13,6 @@ func (s *Server) registerUserRoutes() {
 	ur.POST("/auth", s.userService.LoginUser)
 	ur.POST("/:id/enrollments", s.userService.EnrollUser)
 
-	// TODO: test these
 	student.POST("/:id/course_registrations", s.userService.RegisterCourses)
 	student.GET("/:id/eligibility", s.userService.CheckEligibilityForAllRegisteredCourses)
 	student.DELETE("/:id/course_registrations/:course_code", s.userService.DropCoursesRegisteredByStudent)
@@ -21,4 +20,5 @@ func (s *Server) registerUserRoutes() {
 	lecturer.POST("/:id/course_assignments", s.userService.AssignCourses)
 	lecturer.GET("/:id/availability", s.userService.CheckAvailabilityForAllAssignedCourses)
 	lecturer.DELETE("/:id/course_assignments/:course_code", s.userService.UnassignCourses)
+	lecturer.PUT("/:id/course_assignments/:course_code", s.userService.SetActiveLecturer)
 }

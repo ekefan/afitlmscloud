@@ -81,6 +81,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.registerCourseStmt, err = db.PrepareContext(ctx, registerCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query RegisterCourse: %w", err)
 	}
+	if q.setActiveLecturerStmt, err = db.PrepareContext(ctx, setActiveLecturer); err != nil {
+		return nil, fmt.Errorf("error preparing query SetActiveLecturer: %w", err)
+	}
 	if q.unassignLecturerFromCourseStmt, err = db.PrepareContext(ctx, unassignLecturerFromCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query UnassignLecturerFromCourse: %w", err)
 	}
@@ -196,6 +199,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing registerCourseStmt: %w", cerr)
 		}
 	}
+	if q.setActiveLecturerStmt != nil {
+		if cerr := q.setActiveLecturerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing setActiveLecturerStmt: %w", cerr)
+		}
+	}
 	if q.unassignLecturerFromCourseStmt != nil {
 		if cerr := q.unassignLecturerFromCourseStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing unassignLecturerFromCourseStmt: %w", cerr)
@@ -279,6 +287,7 @@ type Queries struct {
 	getUserByEmailStmt                       *sql.Stmt
 	getUserByIDStmt                          *sql.Stmt
 	registerCourseStmt                       *sql.Stmt
+	setActiveLecturerStmt                    *sql.Stmt
 	unassignLecturerFromCourseStmt           *sql.Stmt
 	updateLecturerCoursesStmt                *sql.Stmt
 	updateStudentCoursesStmt                 *sql.Stmt
@@ -309,6 +318,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getUserByEmailStmt:                       q.getUserByEmailStmt,
 		getUserByIDStmt:                          q.getUserByIDStmt,
 		registerCourseStmt:                       q.registerCourseStmt,
+		setActiveLecturerStmt:                    q.setActiveLecturerStmt,
 		unassignLecturerFromCourseStmt:           q.unassignLecturerFromCourseStmt,
 		updateLecturerCoursesStmt:                q.updateLecturerCoursesStmt,
 		updateStudentCoursesStmt:                 q.updateStudentCoursesStmt,

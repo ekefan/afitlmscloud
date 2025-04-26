@@ -33,3 +33,9 @@ INSERT INTO course_lecturers (
 -- name: UnassignLecturerFromCourse :execresult
 DELETE FROM course_lecturers
 WHERE course_code = $1 AND lecturer_id = $2;
+
+-- name: SetActiveLecturer :exec
+UPDATE courses 
+SET
+    active_lecturer_id = $1
+WHERE active_lecturer_id = 0 AND course_code = $2;
