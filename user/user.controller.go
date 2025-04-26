@@ -302,3 +302,70 @@ func (us *UserService) DropCoursesRegisteredByStudent(ctx *gin.Context) {
 	}
 	ctx.Status(http.StatusAccepted)
 }
+
+type AssignCourseReq struct {
+	CourseCodes []string
+}
+
+func (us *UserService) AssignCourses(ctx *gin.Context) {
+	userId, err := strconv.Atoi(ctx.Param("id"))
+	if userId < 1 || err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+
+	var req AssignCourseReq
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request",
+		})
+		return
+	}
+
+	err = us.lecturerService.AssignLecturerToCourse(ctx, int64(userId), req.CourseCodes)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+}
+
+func (us *UserService) CheckAvailabilityForAllAssignedCourses(ctx *gin.Context) {
+	userId, err := strconv.Atoi(ctx.Param("id"))
+	if userId < 1 || err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+	lecturerAvailability, err := us.lecturerService.CheckAvailabilityStatus(ctx, int64(userId))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, lecturerAvailability)
+}
+
+func (us *UserService) UnassignCourses(ctx *gin.Context) {
+	userId, idErr := strconv.Atoi(ctx.Param("id"))
+	courseCode := ctx.Param("course_code")
+	if userId < 1 || idErr != nil || courseCode == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+
+	err := us.lecturerService.UnassignLecturerFromCourse(ctx, int64(userId), []string{courseCode})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error,
+		})
+	}
+	ctx.Status(http.StatusAccepted)
+}

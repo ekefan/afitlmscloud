@@ -5,16 +5,7 @@ CREATE TABLE lecturers (
     courses TEXT[],
     courses_actively_teaching TEXT[],
     updated_at TIMESTAMP DEFAULT now(),
+    weighted_availability FLOAT NOT NULL DEFAULT 0.00,
 
     UNIQUE(user_id, biometric_template)
-);
-
-CREATE TABLE availabilities (
-    id BIGSERIAL PRIMARY KEY,
-    course_id BIGINT NOT NULL,
-    lecturer_id BIGINT NOT NULL REFERENCES lecturers(id) ON DELETE CASCADE,
-    availability FLOAT NOT NULL,
-    updated_at TIMESTAMP DEFAULT now(),
-
-    UNIQUE(course_id, lecturer_id)
 );

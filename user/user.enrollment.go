@@ -100,13 +100,8 @@ func (us *UserService) enrollUser(ctx context.Context, data EnrollmentData) erro
 		}
 	}
 	if slices.Contains(data.Roles, rolesToString(lecturerRole)) {
-		slog.Info("creating a new lecturer")
-		_, err := us.lecturerRepo.CreateLecturer(ctx, db.CreateLecturerParams{
-			UserID:            data.UserId,
-			BiometricTemplate: data.BioMetricTemplate,
-		})
+		_, err := us.lecturerService.CreateLecturer(ctx, data.UserId, data.BioMetricTemplate)
 		if err != nil {
-			slog.Error("couldn't create a lecturer", "details", err)
 			return err
 		}
 	}

@@ -12,6 +12,7 @@ import (
 
 	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
 	"github.com/ekefan/afitlmscloud/internal/repository"
+	"github.com/ekefan/afitlmscloud/user/lecturer"
 	"github.com/ekefan/afitlmscloud/user/student"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
@@ -53,21 +54,21 @@ type UserDTO struct {
 
 // TODO: remove studentRepo from userService
 type UserService struct {
-	userRepo       repository.UserRespository
-	studentService *student.StudentService
-	studentRepo    repository.StudentRepository
-	lecturerRepo   repository.LecturerRepository
+	userRepo        repository.UserRespository
+	studentService  *student.StudentService
+	lecturerService *lecturer.LecturerService
+	studentRepo     repository.StudentRepository
 }
 
 func NewUserService(userRepo repository.UserRespository,
 	studentRepo repository.StudentRepository,
 	studentService *student.StudentService,
-	lecturerRepo repository.LecturerRepository) *UserService {
+	lecturerService *lecturer.LecturerService) *UserService {
 	us := &UserService{
-		userRepo:       userRepo,
-		studentRepo:    studentRepo,
-		lecturerRepo:   lecturerRepo,
-		studentService: studentService,
+		userRepo:        userRepo,
+		studentRepo:     studentRepo,
+		studentService:  studentService,
+		lecturerService: lecturerService,
 	}
 	return us
 }

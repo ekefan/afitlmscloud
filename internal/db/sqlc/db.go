@@ -24,8 +24,8 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
-	if q.createAvailabilityStmt, err = db.PrepareContext(ctx, createAvailability); err != nil {
-		return nil, fmt.Errorf("error preparing query CreateAvailability: %w", err)
+	if q.assignLecturerToCourseStmt, err = db.PrepareContext(ctx, assignLecturerToCourse); err != nil {
+		return nil, fmt.Errorf("error preparing query AssignLecturerToCourse: %w", err)
 	}
 	if q.createCourseStmt, err = db.PrepareContext(ctx, createCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCourse: %w", err)
@@ -38,9 +38,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.createUserStmt, err = db.PrepareContext(ctx, createUser); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUser: %w", err)
-	}
-	if q.deleteAvailabilityStmt, err = db.PrepareContext(ctx, deleteAvailability); err != nil {
-		return nil, fmt.Errorf("error preparing query DeleteAvailability: %w", err)
 	}
 	if q.deleteLecturerStmt, err = db.PrepareContext(ctx, deleteLecturer); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteLecturer: %w", err)
@@ -57,14 +54,8 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.enrollUserStmt, err = db.PrepareContext(ctx, enrollUser); err != nil {
 		return nil, fmt.Errorf("error preparing query EnrollUser: %w", err)
 	}
-	if q.getAvailabilityStmt, err = db.PrepareContext(ctx, getAvailability); err != nil {
-		return nil, fmt.Errorf("error preparing query GetAvailability: %w", err)
-	}
-	if q.getAvailabilityByCourseIdStmt, err = db.PrepareContext(ctx, getAvailabilityByCourseId); err != nil {
-		return nil, fmt.Errorf("error preparing query GetAvailabilityByCourseId: %w", err)
-	}
-	if q.getCourseFilteredStmt, err = db.PrepareContext(ctx, getCourseFiltered); err != nil {
-		return nil, fmt.Errorf("error preparing query GetCourseFiltered: %w", err)
+	if q.getLecturerAvailabilityForAllCoursesStmt, err = db.PrepareContext(ctx, getLecturerAvailabilityForAllCourses); err != nil {
+		return nil, fmt.Errorf("error preparing query GetLecturerAvailabilityForAllCourses: %w", err)
 	}
 	if q.getLecturerByIDStmt, err = db.PrepareContext(ctx, getLecturerByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetLecturerByID: %w", err)
@@ -87,14 +78,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserByIDStmt, err = db.PrepareContext(ctx, getUserByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByID: %w", err)
 	}
-	if q.listAvailabilityForLecturerStmt, err = db.PrepareContext(ctx, listAvailabilityForLecturer); err != nil {
-		return nil, fmt.Errorf("error preparing query ListAvailabilityForLecturer: %w", err)
-	}
 	if q.registerCourseStmt, err = db.PrepareContext(ctx, registerCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query RegisterCourse: %w", err)
 	}
-	if q.updateAvailabilityStmt, err = db.PrepareContext(ctx, updateAvailability); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateAvailability: %w", err)
+	if q.unassignLecturerFromCourseStmt, err = db.PrepareContext(ctx, unassignLecturerFromCourse); err != nil {
+		return nil, fmt.Errorf("error preparing query UnassignLecturerFromCourse: %w", err)
 	}
 	if q.updateLecturerCoursesStmt, err = db.PrepareContext(ctx, updateLecturerCourses); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateLecturerCourses: %w", err)
@@ -113,9 +101,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
-	if q.createAvailabilityStmt != nil {
-		if cerr := q.createAvailabilityStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing createAvailabilityStmt: %w", cerr)
+	if q.assignLecturerToCourseStmt != nil {
+		if cerr := q.assignLecturerToCourseStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing assignLecturerToCourseStmt: %w", cerr)
 		}
 	}
 	if q.createCourseStmt != nil {
@@ -136,11 +124,6 @@ func (q *Queries) Close() error {
 	if q.createUserStmt != nil {
 		if cerr := q.createUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createUserStmt: %w", cerr)
-		}
-	}
-	if q.deleteAvailabilityStmt != nil {
-		if cerr := q.deleteAvailabilityStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing deleteAvailabilityStmt: %w", cerr)
 		}
 	}
 	if q.deleteLecturerStmt != nil {
@@ -168,19 +151,9 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing enrollUserStmt: %w", cerr)
 		}
 	}
-	if q.getAvailabilityStmt != nil {
-		if cerr := q.getAvailabilityStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getAvailabilityStmt: %w", cerr)
-		}
-	}
-	if q.getAvailabilityByCourseIdStmt != nil {
-		if cerr := q.getAvailabilityByCourseIdStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getAvailabilityByCourseIdStmt: %w", cerr)
-		}
-	}
-	if q.getCourseFilteredStmt != nil {
-		if cerr := q.getCourseFilteredStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getCourseFilteredStmt: %w", cerr)
+	if q.getLecturerAvailabilityForAllCoursesStmt != nil {
+		if cerr := q.getLecturerAvailabilityForAllCoursesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getLecturerAvailabilityForAllCoursesStmt: %w", cerr)
 		}
 	}
 	if q.getLecturerByIDStmt != nil {
@@ -218,19 +191,14 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getUserByIDStmt: %w", cerr)
 		}
 	}
-	if q.listAvailabilityForLecturerStmt != nil {
-		if cerr := q.listAvailabilityForLecturerStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing listAvailabilityForLecturerStmt: %w", cerr)
-		}
-	}
 	if q.registerCourseStmt != nil {
 		if cerr := q.registerCourseStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing registerCourseStmt: %w", cerr)
 		}
 	}
-	if q.updateAvailabilityStmt != nil {
-		if cerr := q.updateAvailabilityStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateAvailabilityStmt: %w", cerr)
+	if q.unassignLecturerFromCourseStmt != nil {
+		if cerr := q.unassignLecturerFromCourseStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing unassignLecturerFromCourseStmt: %w", cerr)
 		}
 	}
 	if q.updateLecturerCoursesStmt != nil {
@@ -290,69 +258,61 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                                     DBTX
-	tx                                     *sql.Tx
-	createAvailabilityStmt                 *sql.Stmt
-	createCourseStmt                       *sql.Stmt
-	createLecturerStmt                     *sql.Stmt
-	createStudentStmt                      *sql.Stmt
-	createUserStmt                         *sql.Stmt
-	deleteAvailabilityStmt                 *sql.Stmt
-	deleteLecturerStmt                     *sql.Stmt
-	deleteStudentStmt                      *sql.Stmt
-	deleteUserStmt                         *sql.Stmt
-	dropCourseStmt                         *sql.Stmt
-	enrollUserStmt                         *sql.Stmt
-	getAvailabilityStmt                    *sql.Stmt
-	getAvailabilityByCourseIdStmt          *sql.Stmt
-	getCourseFilteredStmt                  *sql.Stmt
-	getLecturerByIDStmt                    *sql.Stmt
-	getLecturerByUserIDStmt                *sql.Stmt
-	getStudentByIDStmt                     *sql.Stmt
-	getStudentByUserIDStmt                 *sql.Stmt
-	getStudentEligibilityForAllCoursesStmt *sql.Stmt
-	getUserByEmailStmt                     *sql.Stmt
-	getUserByIDStmt                        *sql.Stmt
-	listAvailabilityForLecturerStmt        *sql.Stmt
-	registerCourseStmt                     *sql.Stmt
-	updateAvailabilityStmt                 *sql.Stmt
-	updateLecturerCoursesStmt              *sql.Stmt
-	updateStudentCoursesStmt               *sql.Stmt
-	updateUserEmailStmt                    *sql.Stmt
-	updateUserPasswordStmt                 *sql.Stmt
+	db                                       DBTX
+	tx                                       *sql.Tx
+	assignLecturerToCourseStmt               *sql.Stmt
+	createCourseStmt                         *sql.Stmt
+	createLecturerStmt                       *sql.Stmt
+	createStudentStmt                        *sql.Stmt
+	createUserStmt                           *sql.Stmt
+	deleteLecturerStmt                       *sql.Stmt
+	deleteStudentStmt                        *sql.Stmt
+	deleteUserStmt                           *sql.Stmt
+	dropCourseStmt                           *sql.Stmt
+	enrollUserStmt                           *sql.Stmt
+	getLecturerAvailabilityForAllCoursesStmt *sql.Stmt
+	getLecturerByIDStmt                      *sql.Stmt
+	getLecturerByUserIDStmt                  *sql.Stmt
+	getStudentByIDStmt                       *sql.Stmt
+	getStudentByUserIDStmt                   *sql.Stmt
+	getStudentEligibilityForAllCoursesStmt   *sql.Stmt
+	getUserByEmailStmt                       *sql.Stmt
+	getUserByIDStmt                          *sql.Stmt
+	registerCourseStmt                       *sql.Stmt
+	unassignLecturerFromCourseStmt           *sql.Stmt
+	updateLecturerCoursesStmt                *sql.Stmt
+	updateStudentCoursesStmt                 *sql.Stmt
+	updateUserEmailStmt                      *sql.Stmt
+	updateUserPasswordStmt                   *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                                     tx,
-		tx:                                     tx,
-		createAvailabilityStmt:                 q.createAvailabilityStmt,
-		createCourseStmt:                       q.createCourseStmt,
-		createLecturerStmt:                     q.createLecturerStmt,
-		createStudentStmt:                      q.createStudentStmt,
-		createUserStmt:                         q.createUserStmt,
-		deleteAvailabilityStmt:                 q.deleteAvailabilityStmt,
-		deleteLecturerStmt:                     q.deleteLecturerStmt,
-		deleteStudentStmt:                      q.deleteStudentStmt,
-		deleteUserStmt:                         q.deleteUserStmt,
-		dropCourseStmt:                         q.dropCourseStmt,
-		enrollUserStmt:                         q.enrollUserStmt,
-		getAvailabilityStmt:                    q.getAvailabilityStmt,
-		getAvailabilityByCourseIdStmt:          q.getAvailabilityByCourseIdStmt,
-		getCourseFilteredStmt:                  q.getCourseFilteredStmt,
-		getLecturerByIDStmt:                    q.getLecturerByIDStmt,
-		getLecturerByUserIDStmt:                q.getLecturerByUserIDStmt,
-		getStudentByIDStmt:                     q.getStudentByIDStmt,
-		getStudentByUserIDStmt:                 q.getStudentByUserIDStmt,
-		getStudentEligibilityForAllCoursesStmt: q.getStudentEligibilityForAllCoursesStmt,
-		getUserByEmailStmt:                     q.getUserByEmailStmt,
-		getUserByIDStmt:                        q.getUserByIDStmt,
-		listAvailabilityForLecturerStmt:        q.listAvailabilityForLecturerStmt,
-		registerCourseStmt:                     q.registerCourseStmt,
-		updateAvailabilityStmt:                 q.updateAvailabilityStmt,
-		updateLecturerCoursesStmt:              q.updateLecturerCoursesStmt,
-		updateStudentCoursesStmt:               q.updateStudentCoursesStmt,
-		updateUserEmailStmt:                    q.updateUserEmailStmt,
-		updateUserPasswordStmt:                 q.updateUserPasswordStmt,
+		db:                                       tx,
+		tx:                                       tx,
+		assignLecturerToCourseStmt:               q.assignLecturerToCourseStmt,
+		createCourseStmt:                         q.createCourseStmt,
+		createLecturerStmt:                       q.createLecturerStmt,
+		createStudentStmt:                        q.createStudentStmt,
+		createUserStmt:                           q.createUserStmt,
+		deleteLecturerStmt:                       q.deleteLecturerStmt,
+		deleteStudentStmt:                        q.deleteStudentStmt,
+		deleteUserStmt:                           q.deleteUserStmt,
+		dropCourseStmt:                           q.dropCourseStmt,
+		enrollUserStmt:                           q.enrollUserStmt,
+		getLecturerAvailabilityForAllCoursesStmt: q.getLecturerAvailabilityForAllCoursesStmt,
+		getLecturerByIDStmt:                      q.getLecturerByIDStmt,
+		getLecturerByUserIDStmt:                  q.getLecturerByUserIDStmt,
+		getStudentByIDStmt:                       q.getStudentByIDStmt,
+		getStudentByUserIDStmt:                   q.getStudentByUserIDStmt,
+		getStudentEligibilityForAllCoursesStmt:   q.getStudentEligibilityForAllCoursesStmt,
+		getUserByEmailStmt:                       q.getUserByEmailStmt,
+		getUserByIDStmt:                          q.getUserByIDStmt,
+		registerCourseStmt:                       q.registerCourseStmt,
+		unassignLecturerFromCourseStmt:           q.unassignLecturerFromCourseStmt,
+		updateLecturerCoursesStmt:                q.updateLecturerCoursesStmt,
+		updateStudentCoursesStmt:                 q.updateStudentCoursesStmt,
+		updateUserEmailStmt:                      q.updateUserEmailStmt,
+		updateUserPasswordStmt:                   q.updateUserPasswordStmt,
 	}
 }

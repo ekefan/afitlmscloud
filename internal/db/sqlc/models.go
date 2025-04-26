@@ -9,14 +9,6 @@ import (
 	"time"
 )
 
-type Availability struct {
-	ID           int64        `json:"id"`
-	CourseID     int64        `json:"course_id"`
-	LecturerID   int64        `json:"lecturer_id"`
-	Availability float64      `json:"availability"`
-	UpdatedAt    sql.NullTime `json:"updated_at"`
-}
-
 type Course struct {
 	ID                       int64  `json:"id"`
 	Name                     string `json:"name"`
@@ -29,8 +21,10 @@ type Course struct {
 }
 
 type CourseLecturer struct {
-	CourseCode string `json:"course_code"`
-	LecturerID int64  `json:"lecturer_id"`
+	CourseCode   string       `json:"course_code"`
+	LecturerID   int64        `json:"lecturer_id"`
+	Availability float64      `json:"availability"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
 }
 
 type CourseStudent struct {
@@ -47,6 +41,7 @@ type Lecturer struct {
 	Courses                 []string     `json:"courses"`
 	CoursesActivelyTeaching []string     `json:"courses_actively_teaching"`
 	UpdatedAt               sql.NullTime `json:"updated_at"`
+	WeightedAvailability    float64      `json:"weighted_availability"`
 }
 
 type Student struct {

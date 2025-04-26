@@ -14,6 +14,8 @@ CREATE INDEX idx_courses_faculty_department_level ON courses(faculty, department
 CREATE TABLE course_lecturers (
     course_code VARCHAR(10),
     lecturer_id BIGINT,
+    availability FLOAT NOT NULL DEFAULT 0.00,
+    updated_at TIMESTAMP DEFAULT now(),
     
     PRIMARY KEY (course_code, lecturer_id),
     

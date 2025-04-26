@@ -10,20 +10,17 @@ import (
 )
 
 type Querier interface {
-	CreateAvailability(ctx context.Context, arg CreateAvailabilityParams) (Availability, error)
+	AssignLecturerToCourse(ctx context.Context, arg AssignLecturerToCourseParams) error
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (Course, error)
 	CreateLecturer(ctx context.Context, arg CreateLecturerParams) (Lecturer, error)
 	CreateStudent(ctx context.Context, arg CreateStudentParams) (Student, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteAvailability(ctx context.Context, arg DeleteAvailabilityParams) (sql.Result, error)
 	DeleteLecturer(ctx context.Context, id int64) (sql.Result, error)
 	DeleteStudent(ctx context.Context, id int64) (sql.Result, error)
 	DeleteUser(ctx context.Context, id int64) (sql.Result, error)
 	DropCourse(ctx context.Context, arg DropCourseParams) (sql.Result, error)
 	EnrollUser(ctx context.Context, arg EnrollUserParams) (User, error)
-	GetAvailability(ctx context.Context, arg GetAvailabilityParams) (Availability, error)
-	GetAvailabilityByCourseId(ctx context.Context, courseID int64) (Availability, error)
-	GetCourseFiltered(ctx context.Context, arg GetCourseFilteredParams) ([]Course, error)
+	GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]GetLecturerAvailabilityForAllCoursesRow, error)
 	GetLecturerByID(ctx context.Context, id int64) (Lecturer, error)
 	GetLecturerByUserID(ctx context.Context, userID int64) (Lecturer, error)
 	GetStudentByID(ctx context.Context, id int64) (Student, error)
@@ -31,9 +28,8 @@ type Querier interface {
 	GetStudentEligibilityForAllCourses(ctx context.Context, studentID int64) ([]GetStudentEligibilityForAllCoursesRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
-	ListAvailabilityForLecturer(ctx context.Context, lecturerID int64) ([]Availability, error)
 	RegisterCourse(ctx context.Context, arg RegisterCourseParams) error
-	UpdateAvailability(ctx context.Context, arg UpdateAvailabilityParams) (Availability, error)
+	UnassignLecturerFromCourse(ctx context.Context, arg UnassignLecturerFromCourseParams) (sql.Result, error)
 	UpdateLecturerCourses(ctx context.Context, arg UpdateLecturerCoursesParams) (Lecturer, error)
 	UpdateStudentCourses(ctx context.Context, arg UpdateStudentCoursesParams) (Student, error)
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) (User, error)

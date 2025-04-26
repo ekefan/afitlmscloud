@@ -10,6 +10,25 @@ import (
 	"database/sql"
 )
 
+const assignLecturerToCourse = `-- name: AssignLecturerToCourse :exec
+INSERT INTO course_lecturers (
+    course_code,
+    lecturer_id
+) VALUES (
+    $1, $2
+)
+`
+
+type AssignLecturerToCourseParams struct {
+	CourseCode string `json:"course_code"`
+	LecturerID int64  `json:"lecturer_id"`
+}
+
+func (q *Queries) AssignLecturerToCourse(ctx context.Context, arg AssignLecturerToCourseParams) error {
+	_, err := q.exec(ctx, q.assignLecturerToCourseStmt, assignLecturerToCourse, arg.CourseCode, arg.LecturerID)
+	return err
+}
+
 const createCourse = `-- name: CreateCourse :one
 INSERT INTO courses (
     name, 
@@ -66,49 +85,6 @@ func (q *Queries) DropCourse(ctx context.Context, arg DropCourseParams) (sql.Res
 	return q.exec(ctx, q.dropCourseStmt, dropCourse, arg.CourseCode, arg.StudentID)
 }
 
-const getCourseFiltered = `-- name: GetCourseFiltered :many
-SELECT id, name, faculty, department, level, course_code, num_of_lectures_per_semester, active_lecturer_id FROM courses
-WHERE faculty = $1 AND department = $2 AND level = $3
-`
-
-type GetCourseFilteredParams struct {
-	Faculty    string `json:"faculty"`
-	Department string `json:"department"`
-	Level      string `json:"level"`
-}
-
-func (q *Queries) GetCourseFiltered(ctx context.Context, arg GetCourseFilteredParams) ([]Course, error) {
-	rows, err := q.query(ctx, q.getCourseFilteredStmt, getCourseFiltered, arg.Faculty, arg.Department, arg.Level)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Course{}
-	for rows.Next() {
-		var i Course
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Faculty,
-			&i.Department,
-			&i.Level,
-			&i.CourseCode,
-			&i.NumOfLecturesPerSemester,
-			&i.ActiveLecturerID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const registerCourse = `-- name: RegisterCourse :exec
 INSERT INTO course_students (
     course_code,
@@ -126,4 +102,18 @@ type RegisterCourseParams struct {
 func (q *Queries) RegisterCourse(ctx context.Context, arg RegisterCourseParams) error {
 	_, err := q.exec(ctx, q.registerCourseStmt, registerCourse, arg.CourseCode, arg.StudentID)
 	return err
+}
+
+const unassignLecturerFromCourse = `-- name: UnassignLecturerFromCourse :execresult
+DELETE FROM course_lecturers
+WHERE course_code = $1 AND lecturer_id = $2
+`
+
+type UnassignLecturerFromCourseParams struct {
+	CourseCode string `json:"course_code"`
+	LecturerID int64  `json:"lecturer_id"`
+}
+
+func (q *Queries) UnassignLecturerFromCourse(ctx context.Context, arg UnassignLecturerFromCourseParams) (sql.Result, error) {
+	return q.exec(ctx, q.unassignLecturerFromCourseStmt, unassignLecturerFromCourse, arg.CourseCode, arg.LecturerID)
 }

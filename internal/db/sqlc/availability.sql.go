@@ -7,112 +7,34 @@ package db
 
 import (
 	"context"
-	"database/sql"
 )
 
-const createAvailability = `-- name: CreateAvailability :one
-INSERT INTO availabilities (
-    course_id, lecturer_id, availability
-) VALUES (
-    $1, $2, $3
-) RETURNING id, course_id, lecturer_id, availability, updated_at
+const getLecturerAvailabilityForAllCourses = `-- name: GetLecturerAvailabilityForAllCourses :many
+SELECT
+    c.name As course_name,
+    cl.availability,
+    c.course_code
+FROM course_lecturers cl
+JOIN courses c ON c.course_code = cl.course_code
+WHERE cl.lecturer_id = $1
 `
 
-type CreateAvailabilityParams struct {
-	CourseID     int64   `json:"course_id"`
-	LecturerID   int64   `json:"lecturer_id"`
+type GetLecturerAvailabilityForAllCoursesRow struct {
+	CourseName   string  `json:"course_name"`
 	Availability float64 `json:"availability"`
+	CourseCode   string  `json:"course_code"`
 }
 
-func (q *Queries) CreateAvailability(ctx context.Context, arg CreateAvailabilityParams) (Availability, error) {
-	row := q.queryRow(ctx, q.createAvailabilityStmt, createAvailability, arg.CourseID, arg.LecturerID, arg.Availability)
-	var i Availability
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.LecturerID,
-		&i.Availability,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const deleteAvailability = `-- name: DeleteAvailability :execresult
-DELETE FROM availabilities
-WHERE course_id = $1 AND lecturer_id = $2
-`
-
-type DeleteAvailabilityParams struct {
-	CourseID   int64 `json:"course_id"`
-	LecturerID int64 `json:"lecturer_id"`
-}
-
-func (q *Queries) DeleteAvailability(ctx context.Context, arg DeleteAvailabilityParams) (sql.Result, error) {
-	return q.exec(ctx, q.deleteAvailabilityStmt, deleteAvailability, arg.CourseID, arg.LecturerID)
-}
-
-const getAvailability = `-- name: GetAvailability :one
-SELECT id, course_id, lecturer_id, availability, updated_at FROM availabilities
-WHERE course_id = $1 AND lecturer_id = $2
-`
-
-type GetAvailabilityParams struct {
-	CourseID   int64 `json:"course_id"`
-	LecturerID int64 `json:"lecturer_id"`
-}
-
-func (q *Queries) GetAvailability(ctx context.Context, arg GetAvailabilityParams) (Availability, error) {
-	row := q.queryRow(ctx, q.getAvailabilityStmt, getAvailability, arg.CourseID, arg.LecturerID)
-	var i Availability
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.LecturerID,
-		&i.Availability,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getAvailabilityByCourseId = `-- name: GetAvailabilityByCourseId :one
-SELECT id, course_id, lecturer_id, availability, updated_at FROM availabilities
-WHERE course_id = $1
-`
-
-func (q *Queries) GetAvailabilityByCourseId(ctx context.Context, courseID int64) (Availability, error) {
-	row := q.queryRow(ctx, q.getAvailabilityByCourseIdStmt, getAvailabilityByCourseId, courseID)
-	var i Availability
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.LecturerID,
-		&i.Availability,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const listAvailabilityForLecturer = `-- name: ListAvailabilityForLecturer :many
-SELECT id, course_id, lecturer_id, availability, updated_at FROM availabilities
-WHERE lecturer_id = $1
-`
-
-func (q *Queries) ListAvailabilityForLecturer(ctx context.Context, lecturerID int64) ([]Availability, error) {
-	rows, err := q.query(ctx, q.listAvailabilityForLecturerStmt, listAvailabilityForLecturer, lecturerID)
+func (q *Queries) GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]GetLecturerAvailabilityForAllCoursesRow, error) {
+	rows, err := q.query(ctx, q.getLecturerAvailabilityForAllCoursesStmt, getLecturerAvailabilityForAllCourses, lecturerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Availability{}
+	items := []GetLecturerAvailabilityForAllCoursesRow{}
 	for rows.Next() {
-		var i Availability
-		if err := rows.Scan(
-			&i.ID,
-			&i.CourseID,
-			&i.LecturerID,
-			&i.Availability,
-			&i.UpdatedAt,
-		); err != nil {
+		var i GetLecturerAvailabilityForAllCoursesRow
+		if err := rows.Scan(&i.CourseName, &i.Availability, &i.CourseCode); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -124,30 +46,4 @@ func (q *Queries) ListAvailabilityForLecturer(ctx context.Context, lecturerID in
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateAvailability = `-- name: UpdateAvailability :one
-UPDATE availabilities
-SET availability = $3, updated_at = now()
-WHERE course_id = $1 AND lecturer_id = $2
-RETURNING id, course_id, lecturer_id, availability, updated_at
-`
-
-type UpdateAvailabilityParams struct {
-	CourseID     int64   `json:"course_id"`
-	LecturerID   int64   `json:"lecturer_id"`
-	Availability float64 `json:"availability"`
-}
-
-func (q *Queries) UpdateAvailability(ctx context.Context, arg UpdateAvailabilityParams) (Availability, error) {
-	row := q.queryRow(ctx, q.updateAvailabilityStmt, updateAvailability, arg.CourseID, arg.LecturerID, arg.Availability)
-	var i Availability
-	err := row.Scan(
-		&i.ID,
-		&i.CourseID,
-		&i.LecturerID,
-		&i.Availability,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

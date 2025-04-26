@@ -17,7 +17,7 @@ INSERT INTO lecturers (
     user_id, biometric_template, courses, courses_actively_teaching
 ) VALUES (
     $1, $2, $3, $4
-) RETURNING id, user_id, biometric_template, courses, courses_actively_teaching, updated_at
+) RETURNING id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability
 `
 
 type CreateLecturerParams struct {
@@ -42,6 +42,7 @@ func (q *Queries) CreateLecturer(ctx context.Context, arg CreateLecturerParams) 
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,
+		&i.WeightedAvailability,
 	)
 	return i, err
 }
@@ -55,7 +56,7 @@ func (q *Queries) DeleteLecturer(ctx context.Context, id int64) (sql.Result, err
 }
 
 const getLecturerByID = `-- name: GetLecturerByID :one
-SELECT id, user_id, biometric_template, courses, courses_actively_teaching, updated_at FROM lecturers WHERE id = $1
+SELECT id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability FROM lecturers WHERE id = $1
 `
 
 func (q *Queries) GetLecturerByID(ctx context.Context, id int64) (Lecturer, error) {
@@ -68,12 +69,13 @@ func (q *Queries) GetLecturerByID(ctx context.Context, id int64) (Lecturer, erro
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,
+		&i.WeightedAvailability,
 	)
 	return i, err
 }
 
 const getLecturerByUserID = `-- name: GetLecturerByUserID :one
-SELECT id, user_id, biometric_template, courses, courses_actively_teaching, updated_at FROM lecturers WHERE user_id = $1
+SELECT id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability FROM lecturers WHERE user_id = $1
 `
 
 func (q *Queries) GetLecturerByUserID(ctx context.Context, userID int64) (Lecturer, error) {
@@ -86,6 +88,7 @@ func (q *Queries) GetLecturerByUserID(ctx context.Context, userID int64) (Lectur
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,
+		&i.WeightedAvailability,
 	)
 	return i, err
 }
@@ -94,7 +97,7 @@ const updateLecturerCourses = `-- name: UpdateLecturerCourses :one
 UPDATE lecturers
 SET courses = $2, courses_actively_teaching = $3, updated_at = now()
 WHERE id = $1
-RETURNING id, user_id, biometric_template, courses, courses_actively_teaching, updated_at
+RETURNING id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability
 `
 
 type UpdateLecturerCoursesParams struct {
@@ -113,6 +116,7 @@ func (q *Queries) UpdateLecturerCourses(ctx context.Context, arg UpdateLecturerC
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,
+		&i.WeightedAvailability,
 	)
 	return i, err
 }

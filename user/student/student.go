@@ -23,9 +23,9 @@ func NewStudentService(courseService *course.CourseService, repo repository.Stud
 
 func (s *StudentService) RegisterCourses(ctx context.Context, studentID int64, courseCodes []string) error {
 	for _, c := range courseCodes {
-		err := s.courseService.RegisterCouse(ctx, course.StudentCourseData{
+		err := s.courseService.RegisterCouse(ctx, course.UserCourseData{
 			CourseCode: c,
-			StudentID:  studentID,
+			UserID:  studentID,
 		})
 		if err != nil {
 			slog.Error("Handle error when registering courses")
@@ -37,9 +37,9 @@ func (s *StudentService) RegisterCourses(ctx context.Context, studentID int64, c
 
 func (s *StudentService) DropCourses(ctx context.Context, studentID int64, courseCodes []string) error {
 	for _, c := range courseCodes {
-		err := s.courseService.DropCourses(ctx, course.StudentCourseData{
+		err := s.courseService.DropCourses(ctx, course.UserCourseData{
 			CourseCode: c,
-			StudentID:  studentID,
+			UserID:  studentID,
 		})
 		if err != nil {
 			slog.Error("Handle error when dropping courses courses", "error", err)
