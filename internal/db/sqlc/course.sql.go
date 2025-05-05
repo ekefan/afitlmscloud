@@ -85,6 +85,35 @@ func (q *Queries) DropCourse(ctx context.Context, arg DropCourseParams) (sql.Res
 	return q.exec(ctx, q.dropCourseStmt, dropCourse, arg.CourseCode, arg.StudentID)
 }
 
+const getCourseMetaData = `-- name: GetCourseMetaData :one
+SELECT
+    c.name,
+    c.faculty,
+    c.department,
+    c.level
+FROM courses c
+WHERE c.course_code = $1
+`
+
+type GetCourseMetaDataRow struct {
+	Name       string `json:"name"`
+	Faculty    string `json:"faculty"`
+	Department string `json:"department"`
+	Level      string `json:"level"`
+}
+
+func (q *Queries) GetCourseMetaData(ctx context.Context, courseCode string) (GetCourseMetaDataRow, error) {
+	row := q.queryRow(ctx, q.getCourseMetaDataStmt, getCourseMetaData, courseCode)
+	var i GetCourseMetaDataRow
+	err := row.Scan(
+		&i.Name,
+		&i.Faculty,
+		&i.Department,
+		&i.Level,
+	)
+	return i, err
+}
+
 const registerCourse = `-- name: RegisterCourse :exec
 INSERT INTO course_students (
     course_code,

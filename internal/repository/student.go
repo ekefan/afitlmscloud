@@ -13,6 +13,7 @@ type StudentRepository interface {
 	GetStudentByID(ctx context.Context, id int64) (db.Student, error)
 	GetStudentByUserID(ctx context.Context, userID int64) (db.Student, error)
 	UpdateStudentCourses(ctx context.Context, arg db.UpdateStudentCoursesParams) (db.Student, error)
+	BatchGetEligibilityMetaData(ctx context.Context, studentids []int64) ([]db.BatchGetEligibilityMetaDataRow, error)
 }
 
 var _ StudentRepository = (*studentStore)(nil)

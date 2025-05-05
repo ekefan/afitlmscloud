@@ -39,3 +39,12 @@ UPDATE courses
 SET
     active_lecturer_id = $1
 WHERE active_lecturer_id = 0 AND course_code = $2;
+
+-- name: GetCourseMetaData :one
+SELECT
+    c.name,
+    c.faculty,
+    c.department,
+    c.level
+FROM courses c
+WHERE c.course_code = $1;

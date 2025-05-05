@@ -12,6 +12,40 @@ import (
 	"github.com/lib/pq"
 )
 
+const batchGetEligibilityMetaData = `-- name: BatchGetEligibilityMetaData :many
+SELECT u.full_name, u.sch_id
+FROM users u
+WHERE id = ANY($1::bigint[])
+`
+
+type BatchGetEligibilityMetaDataRow struct {
+	FullName string `json:"full_name"`
+	SchID    string `json:"sch_id"`
+}
+
+func (q *Queries) BatchGetEligibilityMetaData(ctx context.Context, studentids []int64) ([]BatchGetEligibilityMetaDataRow, error) {
+	rows, err := q.query(ctx, q.batchGetEligibilityMetaDataStmt, batchGetEligibilityMetaData, pq.Array(studentids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BatchGetEligibilityMetaDataRow{}
+	for rows.Next() {
+		var i BatchGetEligibilityMetaDataRow
+		if err := rows.Scan(&i.FullName, &i.SchID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createStudent = `-- name: CreateStudent :one
 INSERT INTO students (
     user_id, courses, biometric_template

@@ -11,6 +11,7 @@ import (
 
 type Querier interface {
 	AssignLecturerToCourse(ctx context.Context, arg AssignLecturerToCourseParams) error
+	BatchGetEligibilityMetaData(ctx context.Context, studentids []int64) ([]BatchGetEligibilityMetaDataRow, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (Course, error)
 	CreateLecturer(ctx context.Context, arg CreateLecturerParams) (Lecturer, error)
 	CreateStudent(ctx context.Context, arg CreateStudentParams) (Student, error)
@@ -20,6 +21,8 @@ type Querier interface {
 	DeleteUser(ctx context.Context, id int64) (sql.Result, error)
 	DropCourse(ctx context.Context, arg DropCourseParams) (sql.Result, error)
 	EnrollUser(ctx context.Context, arg EnrollUserParams) (User, error)
+	GetAllStudentsEligibilityForCourse(ctx context.Context, courseCode string) ([]GetAllStudentsEligibilityForCourseRow, error)
+	GetCourseMetaData(ctx context.Context, courseCode string) (GetCourseMetaDataRow, error)
 	GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]GetLecturerAvailabilityForAllCoursesRow, error)
 	GetLecturerByID(ctx context.Context, id int64) (Lecturer, error)
 	GetLecturerByUserID(ctx context.Context, userID int64) (Lecturer, error)

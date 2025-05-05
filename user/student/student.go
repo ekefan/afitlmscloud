@@ -25,7 +25,7 @@ func (s *StudentService) RegisterCourses(ctx context.Context, studentID int64, c
 	for _, c := range courseCodes {
 		err := s.courseService.RegisterCouse(ctx, course.UserCourseData{
 			CourseCode: c,
-			UserID:  studentID,
+			UserID:     studentID,
 		})
 		if err != nil {
 			slog.Error("Handle error when registering courses")
@@ -39,7 +39,7 @@ func (s *StudentService) DropCourses(ctx context.Context, studentID int64, cours
 	for _, c := range courseCodes {
 		err := s.courseService.DropCourses(ctx, course.UserCourseData{
 			CourseCode: c,
-			UserID:  studentID,
+			UserID:     studentID,
 		})
 		if err != nil {
 			slog.Error("Handle error when dropping courses courses", "error", err)
@@ -61,4 +61,60 @@ func (s *StudentService) CheckEligibilityStatus(ctx context.Context, studentID i
 		studentID: courseEligibilities,
 	}
 	return res, nil
+}
+
+type EligibilityList struct {
+	StudentName  string  `json:"student_name"`
+	MatricNumber string  `json:"matric_number"`
+	Eligibility  float64 `json:"eligibility"`
+}
+type CourseData struct {
+	CourseCode string `json:"course_code"`
+	CourseName string `json:"course_name"`
+	Faculty    string `json:"faculty"`
+	Level      string `json:"level"`
+	Department string `json:"Deparment"`
+}
+type StudentEligibilityList struct {
+	CourseData      CourseData        `json:"course_data"`
+	EligibilityList []EligibilityList `json:"student_eligibility"`
+}
+
+func (s *StudentService) GetStudentEligibilityList(ctx context.Context, courseCode string) (StudentEligibilityList, error) {
+
+	courseRes, err := s.courseService.GetStudentEligibilityList(ctx, courseCode)
+	if err != nil {
+		slog.Error("Handle error when getting student eligibility list", "error", err)
+		return StudentEligibilityList{}, err
+	}
+	studentIDs := []int64{}
+	for _, student := range courseRes.StudentData {
+		studentIDs = append(studentIDs, student.StudentID)
+	}
+
+	studentMetaData, err := s.repo.BatchGetEligibilityMetaData(ctx, studentIDs)
+	if err != nil {
+		slog.Error("handle error when getting student eligibility list", err)
+		return StudentEligibilityList{}, err
+	}
+	eligibilitylist := []EligibilityList{}
+	for i, metaData := range studentMetaData {
+		newEligibilityData := EligibilityList{
+			StudentName:  metaData.FullName,
+			MatricNumber: metaData.SchID,
+			Eligibility:  courseRes.StudentData[i].Eligibility,
+		}
+		eligibilitylist = append(eligibilitylist, newEligibilityData)
+	}
+	studentEligibilityList := StudentEligibilityList{
+		CourseData: CourseData{
+			CourseCode: courseCode,
+			Level:      courseRes.CourseData.Level,
+			Faculty:    courseRes.CourseData.Faculty,
+			CourseName: courseRes.CourseData.Name,
+			Department: courseRes.CourseData.Department,
+		},
+		EligibilityList: eligibilitylist,
+	}
+	return studentEligibilityList, nil
 }

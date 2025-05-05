@@ -16,8 +16,9 @@ var (
 	ErrFailedToAssignCourse                      = errors.New("failed to assign course")
 	ErrFailedToUnAssignCourse                    = errors.New("failed to unassign course")
 	ErrFailedToGetAvailabilityForAllCourses      = errors.New("failed to get availability for all courses")
-	// ErrActiveLecturerAlreadySetForThisCourse     = errors.New("failed to set active lecturer")
-	ErrFailedToSetActiveLecturer = errors.New("failed to set active lecturer")
+	ErrFailedToSetActiveLecturer                 = errors.New("failed to set active lecturer")
+	ErrFailedToGetStudentEligibilityList         = errors.New("failed to get student elibility list")
+	// ErrActiveLecturerAlreadySetForThisCourse  = errors.New("failed to set active lecturer")
 )
 
 type CourseService struct {
@@ -154,4 +155,41 @@ func (csvc *CourseService) SetActiveLecturer(ctx context.Context, lecturerID int
 
 	// TODO: Send ActiveLecturerEvent...
 	return nil
+}
+
+type CourseEligbilityListResp struct {
+	CourseData  CourseData
+	StudentData []db.GetAllStudentsEligibilityForCourseRow
+}
+
+type CourseData struct {
+	Name       string
+	Faculty    string
+	Level      string
+	Department string
+}
+
+func (csvc *CourseService) GetStudentEligibilityList(ctx context.Context, courseCode string) (CourseEligbilityListResp, error) {
+	response := CourseEligbilityListResp{}
+	dbres, err := csvc.repo.GetAllStudentsEligibilityForCourse(ctx, courseCode)
+	if err != nil {
+		slog.Error("failed to get student eligibility list", "error", err)
+		return response, ErrFailedToGetStudentEligibilityList
+	}
+	courseDetails, err := csvc.repo.GetCourseMetaData(ctx, courseCode)
+	if err != nil {
+		slog.Error("failed to get student eligibility list", "error", err)
+		return response, ErrFailedToGetStudentEligibilityList
+	}
+
+	response = CourseEligbilityListResp{
+		CourseData: CourseData{
+			Name:       courseDetails.Name,
+			Faculty:    courseDetails.Faculty,
+			Level:      courseDetails.Level,
+			Department: courseDetails.Department,
+		},
+		StudentData: dbres,
+	}
+	return response, nil
 }

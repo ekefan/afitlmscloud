@@ -21,3 +21,9 @@ RETURNING *;
 
 -- name: DeleteStudent :execresult
 DELETE FROM students WHERE id = $1;
+
+
+-- name: BatchGetEligibilityMetaData :many
+SELECT u.full_name, u.sch_id
+FROM users u
+WHERE id = ANY(sqlc.arg(studentIDs)::bigint[]);

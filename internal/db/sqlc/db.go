@@ -27,6 +27,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.assignLecturerToCourseStmt, err = db.PrepareContext(ctx, assignLecturerToCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query AssignLecturerToCourse: %w", err)
 	}
+	if q.batchGetEligibilityMetaDataStmt, err = db.PrepareContext(ctx, batchGetEligibilityMetaData); err != nil {
+		return nil, fmt.Errorf("error preparing query BatchGetEligibilityMetaData: %w", err)
+	}
 	if q.createCourseStmt, err = db.PrepareContext(ctx, createCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCourse: %w", err)
 	}
@@ -53,6 +56,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.enrollUserStmt, err = db.PrepareContext(ctx, enrollUser); err != nil {
 		return nil, fmt.Errorf("error preparing query EnrollUser: %w", err)
+	}
+	if q.getAllStudentsEligibilityForCourseStmt, err = db.PrepareContext(ctx, getAllStudentsEligibilityForCourse); err != nil {
+		return nil, fmt.Errorf("error preparing query GetAllStudentsEligibilityForCourse: %w", err)
+	}
+	if q.getCourseMetaDataStmt, err = db.PrepareContext(ctx, getCourseMetaData); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCourseMetaData: %w", err)
 	}
 	if q.getLecturerAvailabilityForAllCoursesStmt, err = db.PrepareContext(ctx, getLecturerAvailabilityForAllCourses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetLecturerAvailabilityForAllCourses: %w", err)
@@ -109,6 +118,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing assignLecturerToCourseStmt: %w", cerr)
 		}
 	}
+	if q.batchGetEligibilityMetaDataStmt != nil {
+		if cerr := q.batchGetEligibilityMetaDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing batchGetEligibilityMetaDataStmt: %w", cerr)
+		}
+	}
 	if q.createCourseStmt != nil {
 		if cerr := q.createCourseStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createCourseStmt: %w", cerr)
@@ -152,6 +166,16 @@ func (q *Queries) Close() error {
 	if q.enrollUserStmt != nil {
 		if cerr := q.enrollUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing enrollUserStmt: %w", cerr)
+		}
+	}
+	if q.getAllStudentsEligibilityForCourseStmt != nil {
+		if cerr := q.getAllStudentsEligibilityForCourseStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getAllStudentsEligibilityForCourseStmt: %w", cerr)
+		}
+	}
+	if q.getCourseMetaDataStmt != nil {
+		if cerr := q.getCourseMetaDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCourseMetaDataStmt: %w", cerr)
 		}
 	}
 	if q.getLecturerAvailabilityForAllCoursesStmt != nil {
@@ -269,6 +293,7 @@ type Queries struct {
 	db                                       DBTX
 	tx                                       *sql.Tx
 	assignLecturerToCourseStmt               *sql.Stmt
+	batchGetEligibilityMetaDataStmt          *sql.Stmt
 	createCourseStmt                         *sql.Stmt
 	createLecturerStmt                       *sql.Stmt
 	createStudentStmt                        *sql.Stmt
@@ -278,6 +303,8 @@ type Queries struct {
 	deleteUserStmt                           *sql.Stmt
 	dropCourseStmt                           *sql.Stmt
 	enrollUserStmt                           *sql.Stmt
+	getAllStudentsEligibilityForCourseStmt   *sql.Stmt
+	getCourseMetaDataStmt                    *sql.Stmt
 	getLecturerAvailabilityForAllCoursesStmt *sql.Stmt
 	getLecturerByIDStmt                      *sql.Stmt
 	getLecturerByUserIDStmt                  *sql.Stmt
@@ -300,6 +327,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:                                       tx,
 		tx:                                       tx,
 		assignLecturerToCourseStmt:               q.assignLecturerToCourseStmt,
+		batchGetEligibilityMetaDataStmt:          q.batchGetEligibilityMetaDataStmt,
 		createCourseStmt:                         q.createCourseStmt,
 		createLecturerStmt:                       q.createLecturerStmt,
 		createStudentStmt:                        q.createStudentStmt,
@@ -309,6 +337,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteUserStmt:                           q.deleteUserStmt,
 		dropCourseStmt:                           q.dropCourseStmt,
 		enrollUserStmt:                           q.enrollUserStmt,
+		getAllStudentsEligibilityForCourseStmt:   q.getAllStudentsEligibilityForCourseStmt,
+		getCourseMetaDataStmt:                    q.getCourseMetaDataStmt,
 		getLecturerAvailabilityForAllCoursesStmt: q.getLecturerAvailabilityForAllCoursesStmt,
 		getLecturerByIDStmt:                      q.getLecturerByIDStmt,
 		getLecturerByUserIDStmt:                  q.getLecturerByUserIDStmt,

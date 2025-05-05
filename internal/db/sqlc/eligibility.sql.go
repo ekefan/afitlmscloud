@@ -9,6 +9,42 @@ import (
 	"context"
 )
 
+const getAllStudentsEligibilityForCourse = `-- name: GetAllStudentsEligibilityForCourse :many
+SELECT
+    cs.student_id,
+    cs.eligibility
+FROM course_students cs
+WHERE cs.course_code = $1
+`
+
+type GetAllStudentsEligibilityForCourseRow struct {
+	StudentID   int64   `json:"student_id"`
+	Eligibility float64 `json:"eligibility"`
+}
+
+func (q *Queries) GetAllStudentsEligibilityForCourse(ctx context.Context, courseCode string) ([]GetAllStudentsEligibilityForCourseRow, error) {
+	rows, err := q.query(ctx, q.getAllStudentsEligibilityForCourseStmt, getAllStudentsEligibilityForCourse, courseCode)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetAllStudentsEligibilityForCourseRow{}
+	for rows.Next() {
+		var i GetAllStudentsEligibilityForCourseRow
+		if err := rows.Scan(&i.StudentID, &i.Eligibility); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStudentEligibilityForAllCourses = `-- name: GetStudentEligibilityForAllCourses :many
 SELECT
     c.name As course_name,
