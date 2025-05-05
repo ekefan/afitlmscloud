@@ -392,3 +392,24 @@ func (us *UserService) SetActiveLecturer(ctx *gin.Context) {
 	}
 	ctx.Status(http.StatusAccepted)
 }
+
+func (us *UserService) GetStudentEligibilityList(ctx *gin.Context) {
+	userId, idErr := strconv.Atoi(ctx.Param("id"))
+	courseCode, courseCodeExist := ctx.GetQuery("course_code")
+	if userId < 1 || idErr != nil || !courseCodeExist {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "bad request, user id is required and course_code must exist",
+		})
+		return
+	}
+
+	eligibilityList, err := us.studentService.GetStudentEligibilityList(ctx, courseCode)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, eligibilityList)
+}
