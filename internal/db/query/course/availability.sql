@@ -7,10 +7,9 @@ FROM course_lecturers cl
 JOIN courses c ON c.course_code = cl.course_code
 WHERE cl.lecturer_id = $1;
 
--- -- name: GetAllStudentsEligibilityForCourse :many
+-- -- name: GetAllLecturersAvailabilityForCourse :many
 -- SELECT
---     cs.student_id
---     cs.eligibility
---     cs.updated_at
--- FROM course_students cs
--- WHERE cs.course_code = $1;
+--     cl.lecturer_id,
+--     cl.availability
+-- FROM course_lecturers cl
+-- WHERE cl.course_code = $1;

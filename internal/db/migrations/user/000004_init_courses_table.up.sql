@@ -31,3 +31,16 @@ CREATE TABLE course_students (
     PRIMARY KEY (course_code, student_id),
     FOREIGN KEY (course_code) REFERENCES courses(course_code) ON DELETE CASCADE
 );
+
+
+-- CREATE TABLE lecture_sessions (
+--     id BIGSERIAL PRIMARY KEY,
+--     course_code VARCHAR(10) NOT NULL,
+--     lecturer_id BIGINT NOT NULL,
+--     scheduled_date DATE NOT NULL,
+--     status VARCHAR(20) DEFAULT 'pending',  -- ['pending', 'held', 'missed', 'cancelled']
+--     reason TEXT DEFAULT NULL,  -- Optional explanation
+--     qa_approved BOOLEAN DEFAULT FALSE,
+
+--     FOREIGN KEY (course_code) REFERENCES courses(course_code) ON DELETE CASCADE
+-- );

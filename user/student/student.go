@@ -94,7 +94,7 @@ func (s *StudentService) GetStudentEligibilityList(ctx context.Context, courseCo
 
 	studentMetaData, err := s.repo.BatchGetEligibilityMetaData(ctx, studentIDs)
 	if err != nil {
-		slog.Error("handle error when getting student eligibility list", err)
+		slog.Error("handle error when getting student eligibility list", "error", err)
 		return StudentEligibilityList{}, err
 	}
 	eligibilitylist := []EligibilityList{}

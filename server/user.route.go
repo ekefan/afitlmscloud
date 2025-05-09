@@ -2,7 +2,6 @@ package server
 
 func (s *Server) registerUserRoutes() {
 	ur := s.router.Group("/users")
-
 	ur.POST("/", s.userService.CreateUser)
 	ur.GET("/:id", s.userService.GetUser)
 	ur.PUT("/:id/password", s.userService.UpdateUserPassword)
@@ -23,4 +22,5 @@ func (s *Server) registerUserRoutes() {
 	lecturer.GET("/:id/availability", s.userService.CheckAvailabilityForAllAssignedCourses)
 	lecturer.DELETE("/:id/course_assignments/:course_code", s.userService.UnassignCourses)
 	lecturer.PUT("/:id/course_assignments/:course_code", s.userService.SetActiveLecturer)
+
 }

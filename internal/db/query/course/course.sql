@@ -9,6 +9,10 @@ INSERT INTO courses (
     $1, $2, $3, $4, $5
 ) RETURNING *;
 
+-- name: GetCourse :one
+SELECT * FROM courses
+WHERE course_code = $1;
+
 -- name: RegisterCourse :exec
 INSERT INTO course_students (
     course_code,
@@ -29,6 +33,10 @@ INSERT INTO course_lecturers (
 ) VALUES (
     $1, $2
 );
+
+-- name: DeleteCourse :execresult
+DELETE FROM courses
+WHERE course_code = $1;
 
 -- name: UnassignLecturerFromCourse :execresult
 DELETE FROM course_lecturers

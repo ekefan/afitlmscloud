@@ -12,8 +12,9 @@ import (
 )
 
 type Server struct {
-	router      *gin.Engine
-	userService *user.UserService
+	router        *gin.Engine
+	userService   *user.UserService
+	courseService *course.CourseService
 }
 
 func NewServer(dbConn *sql.DB) *Server {
@@ -29,8 +30,10 @@ func NewServer(dbConn *sql.DB) *Server {
 			studentService,
 			lecturerService,
 		),
+		courseService: courseService,
 	}
 	server.registerUserRoutes()
+	server.registerCourseRoutes()
 	return server
 }
 
