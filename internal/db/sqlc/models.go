@@ -34,6 +34,22 @@ type CourseStudent struct {
 	UpdatedAt   sql.NullTime `json:"updated_at"`
 }
 
+type LectureAttendance struct {
+	SessionID      int64     `json:"session_id"`
+	StudentID      int64     `json:"student_id"`
+	AttendanceTime time.Time `json:"attendance_time"`
+	Attended       bool      `json:"attended"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+type LectureSession struct {
+	ID          int64     `json:"id"`
+	CourseCode  string    `json:"course_code"`
+	LecturerID  int64     `json:"lecturer_id"`
+	SessionDate time.Time `json:"session_date"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
 type Lecturer struct {
 	ID                      int64        `json:"id"`
 	UserID                  int64        `json:"user_id"`

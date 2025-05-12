@@ -33,6 +33,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createCourseStmt, err = db.PrepareContext(ctx, createCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCourse: %w", err)
 	}
+	if q.createLectureAttendanceStmt, err = db.PrepareContext(ctx, createLectureAttendance); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateLectureAttendance: %w", err)
+	}
+	if q.createLectureSessionStmt, err = db.PrepareContext(ctx, createLectureSession); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateLectureSession: %w", err)
+	}
 	if q.createLecturerStmt, err = db.PrepareContext(ctx, createLecturer); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateLecturer: %w", err)
 	}
@@ -68,6 +74,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getCourseMetaDataStmt, err = db.PrepareContext(ctx, getCourseMetaData); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCourseMetaData: %w", err)
+	}
+	if q.getLectureAttendanceStmt, err = db.PrepareContext(ctx, getLectureAttendance); err != nil {
+		return nil, fmt.Errorf("error preparing query GetLectureAttendance: %w", err)
+	}
+	if q.getLectureSessionStmt, err = db.PrepareContext(ctx, getLectureSession); err != nil {
+		return nil, fmt.Errorf("error preparing query GetLectureSession: %w", err)
 	}
 	if q.getLecturerAvailabilityForAllCoursesStmt, err = db.PrepareContext(ctx, getLecturerAvailabilityForAllCourses); err != nil {
 		return nil, fmt.Errorf("error preparing query GetLecturerAvailabilityForAllCourses: %w", err)
@@ -134,6 +146,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createCourseStmt: %w", cerr)
 		}
 	}
+	if q.createLectureAttendanceStmt != nil {
+		if cerr := q.createLectureAttendanceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createLectureAttendanceStmt: %w", cerr)
+		}
+	}
+	if q.createLectureSessionStmt != nil {
+		if cerr := q.createLectureSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createLectureSessionStmt: %w", cerr)
+		}
+	}
 	if q.createLecturerStmt != nil {
 		if cerr := q.createLecturerStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createLecturerStmt: %w", cerr)
@@ -192,6 +214,16 @@ func (q *Queries) Close() error {
 	if q.getCourseMetaDataStmt != nil {
 		if cerr := q.getCourseMetaDataStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCourseMetaDataStmt: %w", cerr)
+		}
+	}
+	if q.getLectureAttendanceStmt != nil {
+		if cerr := q.getLectureAttendanceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getLectureAttendanceStmt: %w", cerr)
+		}
+	}
+	if q.getLectureSessionStmt != nil {
+		if cerr := q.getLectureSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getLectureSessionStmt: %w", cerr)
 		}
 	}
 	if q.getLecturerAvailabilityForAllCoursesStmt != nil {
@@ -311,6 +343,8 @@ type Queries struct {
 	assignLecturerToCourseStmt               *sql.Stmt
 	batchGetEligibilityMetaDataStmt          *sql.Stmt
 	createCourseStmt                         *sql.Stmt
+	createLectureAttendanceStmt              *sql.Stmt
+	createLectureSessionStmt                 *sql.Stmt
 	createLecturerStmt                       *sql.Stmt
 	createStudentStmt                        *sql.Stmt
 	createUserStmt                           *sql.Stmt
@@ -323,6 +357,8 @@ type Queries struct {
 	getAllStudentsEligibilityForCourseStmt   *sql.Stmt
 	getCourseStmt                            *sql.Stmt
 	getCourseMetaDataStmt                    *sql.Stmt
+	getLectureAttendanceStmt                 *sql.Stmt
+	getLectureSessionStmt                    *sql.Stmt
 	getLecturerAvailabilityForAllCoursesStmt *sql.Stmt
 	getLecturerByIDStmt                      *sql.Stmt
 	getLecturerByUserIDStmt                  *sql.Stmt
@@ -347,6 +383,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		assignLecturerToCourseStmt:               q.assignLecturerToCourseStmt,
 		batchGetEligibilityMetaDataStmt:          q.batchGetEligibilityMetaDataStmt,
 		createCourseStmt:                         q.createCourseStmt,
+		createLectureAttendanceStmt:              q.createLectureAttendanceStmt,
+		createLectureSessionStmt:                 q.createLectureSessionStmt,
 		createLecturerStmt:                       q.createLecturerStmt,
 		createStudentStmt:                        q.createStudentStmt,
 		createUserStmt:                           q.createUserStmt,
@@ -359,6 +397,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getAllStudentsEligibilityForCourseStmt:   q.getAllStudentsEligibilityForCourseStmt,
 		getCourseStmt:                            q.getCourseStmt,
 		getCourseMetaDataStmt:                    q.getCourseMetaDataStmt,
+		getLectureAttendanceStmt:                 q.getLectureAttendanceStmt,
+		getLectureSessionStmt:                    q.getLectureSessionStmt,
 		getLecturerAvailabilityForAllCoursesStmt: q.getLecturerAvailabilityForAllCoursesStmt,
 		getLecturerByIDStmt:                      q.getLecturerByIDStmt,
 		getLecturerByUserIDStmt:                  q.getLecturerByUserIDStmt,

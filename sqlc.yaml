@@ -6,6 +6,7 @@ sql:
       - "./internal/db/query/student"
       - "./internal/db/query/lecturer"
       - "./internal/db/query/course"
+      - "./internal/db/query/attendance"
     schema:
       - "./internal/db/migrations/user"      
     gen:

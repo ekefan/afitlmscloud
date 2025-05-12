@@ -13,6 +13,8 @@ type Querier interface {
 	AssignLecturerToCourse(ctx context.Context, arg AssignLecturerToCourseParams) error
 	BatchGetEligibilityMetaData(ctx context.Context, studentids []int64) ([]BatchGetEligibilityMetaDataRow, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (Course, error)
+	CreateLectureAttendance(ctx context.Context, arg CreateLectureAttendanceParams) error
+	CreateLectureSession(ctx context.Context, arg CreateLectureSessionParams) (int64, error)
 	CreateLecturer(ctx context.Context, arg CreateLecturerParams) (Lecturer, error)
 	CreateStudent(ctx context.Context, arg CreateStudentParams) (Student, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
@@ -25,6 +27,8 @@ type Querier interface {
 	GetAllStudentsEligibilityForCourse(ctx context.Context, courseCode string) ([]GetAllStudentsEligibilityForCourseRow, error)
 	GetCourse(ctx context.Context, courseCode string) (Course, error)
 	GetCourseMetaData(ctx context.Context, courseCode string) (GetCourseMetaDataRow, error)
+	GetLectureAttendance(ctx context.Context, sessionID int64) ([]LectureAttendance, error)
+	GetLectureSession(ctx context.Context, courseCode string) ([]LectureSession, error)
 	GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]GetLecturerAvailabilityForAllCoursesRow, error)
 	GetLecturerByID(ctx context.Context, id int64) (Lecturer, error)
 	GetLecturerByUserID(ctx context.Context, userID int64) (Lecturer, error)
