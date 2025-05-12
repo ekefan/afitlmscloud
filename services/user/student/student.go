@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/ekefan/afitlmscloud/course"
 	"github.com/ekefan/afitlmscloud/internal/repository"
+	"github.com/ekefan/afitlmscloud/services/course"
 )
 
 type StudentService struct {

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/ekefan/afitlmscloud/course"
 	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
 	"github.com/ekefan/afitlmscloud/internal/repository"
+	"github.com/ekefan/afitlmscloud/services/course"
 )
 
 type LecturerService struct {

@@ -3,11 +3,11 @@ package server
 import (
 	"database/sql"
 
-	"github.com/ekefan/afitlmscloud/course"
 	"github.com/ekefan/afitlmscloud/internal/repository"
-	"github.com/ekefan/afitlmscloud/user"
-	"github.com/ekefan/afitlmscloud/user/lecturer"
-	"github.com/ekefan/afitlmscloud/user/student"
+	"github.com/ekefan/afitlmscloud/services/course"
+	"github.com/ekefan/afitlmscloud/services/user"
+	"github.com/ekefan/afitlmscloud/services/user/lecturer"
+	"github.com/ekefan/afitlmscloud/services/user/student"
 	"github.com/gin-gonic/gin"
 )
 
