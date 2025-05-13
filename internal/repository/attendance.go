@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
@@ -29,22 +28,6 @@ func NewAttendanceStore(dbConn *sql.DB) AttendanceRepository {
 	}
 }
 
-func (as *attendanceStore) execTx(ctx context.Context, fn func(*db.Queries) error) error {
-	tx, err := as.dbConn.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	txQuery := db.New(tx)
-	txErr := fn(txQuery)
-	if txErr != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
-			return fmt.Errorf("txErr: %v\nrbErr: %v", txErr, rbErr)
-		}
-		return txErr
-	}
-	return tx.Commit()
-}
-
 type AttendanceSessionParams struct {
 	AttendanceData []LectureAttendanceParams
 	db.CreateLectureSessionParams
@@ -58,7 +41,7 @@ type LectureAttendanceParams struct {
 }
 
 func (as *attendanceStore) CreateAttendanceSession(ctx context.Context, arg AttendanceSessionParams) error {
-	err := as.execTx(ctx, func(q *db.Queries) error {
+	err := execTx(ctx, as.dbConn, func(q *db.Queries) error {
 		sessionID, err := q.CreateLectureSession(ctx, db.CreateLectureSessionParams{
 			CourseCode:  arg.CourseCode,
 			LecturerID:  arg.LecturerID,

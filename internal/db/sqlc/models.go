@@ -17,21 +17,22 @@ type Course struct {
 	Level                    string `json:"level"`
 	CourseCode               string `json:"course_code"`
 	NumOfLecturesPerSemester int32  `json:"num_of_lectures_per_semester"`
+	LecturerAttendedCount    int32  `json:"lecturer_attended_count"`
 	ActiveLecturerID         int64  `json:"active_lecturer_id"`
 }
 
 type CourseLecturer struct {
 	CourseCode   string       `json:"course_code"`
 	LecturerID   int64        `json:"lecturer_id"`
-	Availability float64      `json:"availability"`
+	Availability int32        `json:"availability"`
 	UpdatedAt    sql.NullTime `json:"updated_at"`
 }
 
 type CourseStudent struct {
-	CourseCode  string       `json:"course_code"`
-	StudentID   int64        `json:"student_id"`
-	Eligibility float64      `json:"eligibility"`
-	UpdatedAt   sql.NullTime `json:"updated_at"`
+	CourseCode           string       `json:"course_code"`
+	StudentID            int64        `json:"student_id"`
+	AttendedLectureCount int32        `json:"attended_lecture_count"`
+	UpdatedAt            sql.NullTime `json:"updated_at"`
 }
 
 type LectureAttendance struct {

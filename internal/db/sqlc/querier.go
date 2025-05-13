@@ -40,8 +40,11 @@ type Querier interface {
 	RegisterCourse(ctx context.Context, arg RegisterCourseParams) error
 	SetActiveLecturer(ctx context.Context, arg SetActiveLecturerParams) error
 	UnassignLecturerFromCourse(ctx context.Context, arg UnassignLecturerFromCourseParams) (sql.Result, error)
+	UpdateCourseNumberOfLecturesPerSemester(ctx context.Context, arg UpdateCourseNumberOfLecturesPerSemesterParams) error
+	UpdateLecturerAttendedCount(ctx context.Context, courseCode string) error
 	UpdateLecturerCourses(ctx context.Context, arg UpdateLecturerCoursesParams) (Lecturer, error)
 	UpdateStudentCourses(ctx context.Context, arg UpdateStudentCoursesParams) (Student, error)
+	UpdateStudentStudentEligibility(ctx context.Context, arg UpdateStudentStudentEligibilityParams) error
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) (User, error)
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error)
 }

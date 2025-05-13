@@ -20,18 +20,57 @@ type CourseRepository interface {
 	GetCourseMetaData(ctx context.Context, courseCode string) (db.GetCourseMetaDataRow, error)
 	DeleteCourse(ctx context.Context, courseCode string) (sql.Result, error)
 	SetActiveLecturer(ctx context.Context, arg db.SetActiveLecturerParams) error
+	UpdateCourseNumberOfLecturesPerSemester(ctx context.Context, arg db.UpdateCourseNumberOfLecturesPerSemesterParams) error
+	HandleAttendanceSessionCreatedEvent(ctx context.Context, arg AttendanceSessionEventParams) error
 }
 
-var _ CourseRepository = (*courseStrore)(nil)
+var _ CourseRepository = (*courseStore)(nil)
 
-type courseStrore struct {
+type courseStore struct {
 	dbConn *sql.DB
 	*db.Queries
 }
 
 func NewCourseStore(dbConn *sql.DB) CourseRepository {
-	return &courseStrore{
+	return &courseStore{
 		dbConn:  dbConn,
 		Queries: db.New(dbConn),
 	}
+}
+
+type AttendanceSessionEventParams struct {
+	CourseCode string
+	// LecturerID     int64
+	StudentDetails []StudentAttendanceData
+}
+type StudentAttendanceData struct {
+	Attended  bool
+	StudentID int64
+}
+
+func (cs *courseStore) HandleAttendanceSessionCreatedEvent(ctx context.Context, arg AttendanceSessionEventParams) error {
+	err := execTx(ctx, cs.dbConn, func(q *db.Queries) error {
+		err := q.UpdateLecturerAttendedCount(ctx, arg.CourseCode)
+		if err != nil {
+			return err
+		}
+
+		for _, attendanceData := range arg.StudentDetails {
+			// Update course_students table for each student
+			if attendanceData.Attended {
+				err := q.UpdateStudentStudentEligibility(ctx, db.UpdateStudentStudentEligibilityParams{
+					CourseCode: arg.CourseCode,
+					StudentID:  attendanceData.StudentID,
+				})
+				if err != nil {
+					return err
+				}
+			}
+
+		}
+
+		return nil
+	})
+
+	return err
 }

@@ -410,6 +410,6 @@ func (us *UserService) GetStudentEligibilityList(ctx *gin.Context) {
 		})
 		return
 	}
-
+	fmt.Println(eligibilityList)
 	ctx.JSON(http.StatusOK, eligibilityList)
 }

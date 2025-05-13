@@ -102,7 +102,7 @@ func (s *StudentService) GetStudentEligibilityList(ctx context.Context, courseCo
 		newEligibilityData := EligibilityList{
 			StudentName:  metaData.FullName,
 			MatricNumber: metaData.SchID,
-			Eligibility:  courseRes.StudentData[i].Eligibility,
+			Eligibility:  courseRes.StudentData[i].EligibilityValue,
 		}
 		eligibilitylist = append(eligibilitylist, newEligibilityData)
 	}

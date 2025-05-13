@@ -3,21 +3,24 @@ package course
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"strconv"
 
 	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
 	"github.com/ekefan/afitlmscloud/internal/repository"
 )
 
 var (
-	ErrFailedToRegisterCourse                    = errors.New("failed to register course")
-	ErrFailedToDropCourse                        = errors.New("failed to drop course")
-	ErrFailedToGetStudentEligbilityForAllCourses = errors.New("failed to get student eligibility for all courses")
-	ErrFailedToAssignCourse                      = errors.New("failed to assign course")
-	ErrFailedToUnAssignCourse                    = errors.New("failed to unassign course")
-	ErrFailedToGetAvailabilityForAllCourses      = errors.New("failed to get availability for all courses")
-	ErrFailedToSetActiveLecturer                 = errors.New("failed to set active lecturer")
-	ErrFailedToGetStudentEligibilityList         = errors.New("failed to get student elibility list")
+	ErrFailedToRegisterCourse                      = errors.New("failed to register course")
+	ErrFailedToDropCourse                          = errors.New("failed to drop course")
+	ErrFailedToGetStudentEligbilityForAllCourses   = errors.New("failed to get student eligibility for all courses")
+	ErrFailedToAssignCourse                        = errors.New("failed to assign course")
+	ErrFailedToUnAssignCourse                      = errors.New("failed to unassign course")
+	ErrFailedToGetAvailabilityForAllCourses        = errors.New("failed to get availability for all courses")
+	ErrFailedToSetActiveLecturer                   = errors.New("failed to set active lecturer")
+	ErrFailedToGetStudentEligibilityList           = errors.New("failed to get student elibility list")
+	ErrFailedToHandleAttendanceSessionCreatedEvent = errors.New("failed to handle err failed to handle attendnace session created event")
 	// ErrActiveLecturerAlreadySetForThisCourse  = errors.New("failed to set active lecturer")
 )
 
@@ -26,9 +29,9 @@ type CourseService struct {
 }
 
 type Eligibility struct {
-	CourseCode  string
-	CourseName  string
-	Eligibility float64
+	CourseCode       string
+	CourseName       string
+	EligibilityValue float64
 }
 
 type Availability struct {
@@ -90,9 +93,9 @@ func (csvc *CourseService) GetStudentEligibilityForAllCourses(ctx context.Contex
 	eligibility := []Eligibility{}
 	for _, e := range res {
 		eligibility = append(eligibility, Eligibility{
-			CourseCode:  e.CourseCode,
-			CourseName:  e.CourseName,
-			Eligibility: e.Eligibility,
+			CourseCode:       e.CourseCode,
+			CourseName:       e.CourseName,
+			EligibilityValue: float64(e.AttendedLectureCount) / float64(e.NumOfLecturesPerSemester),
 		})
 	}
 	return eligibility, nil
@@ -133,13 +136,13 @@ func (csvc *CourseService) GetLecturerAvailabilityForAllCourses(ctx context.Cont
 		return []Availability{}, ErrFailedToGetStudentEligbilityForAllCourses
 	}
 
-	availability := []Availability{}
-	for _, e := range res {
-		availability = append(availability, Availability{
+	availability := make([]Availability, len(res))
+	for i, e := range res {
+		availability[i] = Availability{
 			CourseCode:   e.CourseCode,
 			CourseName:   e.CourseName,
-			Availability: e.Availability,
-		})
+			Availability: float64(e.Availability),
+		}
 	}
 	return availability, nil
 }
@@ -159,7 +162,12 @@ func (csvc *CourseService) SetActiveLecturer(ctx context.Context, lecturerID int
 
 type CourseEligbilityListResp struct {
 	CourseData  CourseData
-	StudentData []db.GetAllStudentsEligibilityForCourseRow
+	StudentData []StudentEligibilityList
+}
+
+type StudentEligibilityList struct {
+	StudentID        int64   `json:"student_id"`
+	EligibilityValue float64 `json:"eligibility_value"`
 }
 
 type CourseData struct {
@@ -182,6 +190,15 @@ func (csvc *CourseService) GetStudentEligibilityList(ctx context.Context, course
 		return response, ErrFailedToGetStudentEligibilityList
 	}
 
+	studentData := make([]StudentEligibilityList, len(dbres))
+	for i, data := range dbres {
+		fmt.Println(dbres[i].AttendedLectureCount, dbres[i].NumOfLecturesPerSemester)
+		eligibilityData := StudentEligibilityList{
+			StudentID:        data.StudentID,
+			EligibilityValue: float64(data.AttendedLectureCount) / float64(data.NumOfLecturesPerSemester),
+		}
+		studentData[i] = eligibilityData
+	}
 	response = CourseEligbilityListResp{
 		CourseData: CourseData{
 			Name:       courseDetails.Name,
@@ -189,9 +206,24 @@ func (csvc *CourseService) GetStudentEligibilityList(ctx context.Context, course
 			Level:      courseDetails.Level,
 			Department: courseDetails.Department,
 		},
-		StudentData: dbres,
+		StudentData: studentData,
 	}
 	return response, nil
+}
+
+type UpdateCourseLectureMetaData struct {
+	CourseCode               string
+	LecturerID               int64
+	StudentAttendanceRecords []repository.StudentAttendanceData
+}
+
+func (csvc *CourseService) OnAttendanceSessionCreated(ctx context.Context, data UpdateCourseLectureMetaData) error {
+	csvc.repo.HandleAttendanceSessionCreatedEvent(ctx, repository.AttendanceSessionEventParams{
+		CourseCode: data.CourseCode,
+		// LecturerID:     data.LecturerID,
+		StudentDetails: data.StudentAttendanceRecords,
+	})
+	return nil
 }
 
 type Course struct {
@@ -254,5 +286,22 @@ func (csvc *CourseService) deleteCourse(ctx context.Context, courseCode string) 
 		return nil
 	}
 
+	return nil
+}
+
+func (csvc *CourseService) updateCourseNumberOfLecterPerSemester(ctx context.Context, courseCode string, numOfLecturesPerSemester string) error {
+	intNumOfLecturesPerSemester, err := strconv.Atoi(numOfLecturesPerSemester)
+	if err != nil {
+		slog.Error("failed to parse num of lectures", "error", err.Error())
+		return err
+	}
+	err = csvc.repo.UpdateCourseNumberOfLecturesPerSemester(ctx, db.UpdateCourseNumberOfLecturesPerSemesterParams{
+		CourseCode:               courseCode,
+		NumOfLecturesPerSemester: int32(intNumOfLecturesPerSemester),
+	})
+	if err != nil {
+		slog.Error("failed to update number of lectures per semester", "error", err)
+		return err
+	}
 	return nil
 }

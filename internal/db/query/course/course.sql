@@ -56,3 +56,15 @@ SELECT
     c.level
 FROM courses c
 WHERE c.course_code = $1;
+
+
+-- name: UpdateLecturerAttendedCount :exec
+UPDATE courses
+SET lecturer_attended_count = lecturer_attended_count + 1
+WHERE course_code = $1;
+
+
+-- name: UpdateCourseNumberOfLecturesPerSemester :exec
+UPDATE courses
+SET num_of_lectures_per_semester = $2
+WHERE course_code = $1;

@@ -26,7 +26,7 @@ CREATE TABLE course_lecturers (
 CREATE TABLE course_students (
     course_code VARCHAR(10),
     student_id BIGINT,
-    eligibility INT NOT NULL DEFAULT 0,
+    attended_lecture_count INT NOT NULL DEFAULT 0,
     updated_at TIMESTAMP DEFAULT now(),
 
     PRIMARY KEY (course_code, student_id),

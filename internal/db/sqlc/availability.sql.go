@@ -20,9 +20,9 @@ WHERE cl.lecturer_id = $1
 `
 
 type GetLecturerAvailabilityForAllCoursesRow struct {
-	CourseName   string  `json:"course_name"`
-	Availability float64 `json:"availability"`
-	CourseCode   string  `json:"course_code"`
+	CourseName   string `json:"course_name"`
+	Availability int32  `json:"availability"`
+	CourseCode   string `json:"course_code"`
 }
 
 func (q *Queries) GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]GetLecturerAvailabilityForAllCoursesRow, error) {

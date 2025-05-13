@@ -38,7 +38,7 @@ INSERT INTO courses (
     course_code
 ) VALUES (
     $1, $2, $3, $4, $5
-) RETURNING id, name, faculty, department, level, course_code, num_of_lectures_per_semester, active_lecturer_id
+) RETURNING id, name, faculty, department, level, course_code, num_of_lectures_per_semester, lecturer_attended_count, active_lecturer_id
 `
 
 type CreateCourseParams struct {
@@ -66,6 +66,7 @@ func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) (Cou
 		&i.Level,
 		&i.CourseCode,
 		&i.NumOfLecturesPerSemester,
+		&i.LecturerAttendedCount,
 		&i.ActiveLecturerID,
 	)
 	return i, err
@@ -95,7 +96,7 @@ func (q *Queries) DropCourse(ctx context.Context, arg DropCourseParams) (sql.Res
 }
 
 const getCourse = `-- name: GetCourse :one
-SELECT id, name, faculty, department, level, course_code, num_of_lectures_per_semester, active_lecturer_id FROM courses
+SELECT id, name, faculty, department, level, course_code, num_of_lectures_per_semester, lecturer_attended_count, active_lecturer_id FROM courses
 WHERE course_code = $1
 `
 
@@ -110,6 +111,7 @@ func (q *Queries) GetCourse(ctx context.Context, courseCode string) (Course, err
 		&i.Level,
 		&i.CourseCode,
 		&i.NumOfLecturesPerSemester,
+		&i.LecturerAttendedCount,
 		&i.ActiveLecturerID,
 	)
 	return i, err
@@ -192,4 +194,31 @@ type UnassignLecturerFromCourseParams struct {
 
 func (q *Queries) UnassignLecturerFromCourse(ctx context.Context, arg UnassignLecturerFromCourseParams) (sql.Result, error) {
 	return q.exec(ctx, q.unassignLecturerFromCourseStmt, unassignLecturerFromCourse, arg.CourseCode, arg.LecturerID)
+}
+
+const updateCourseNumberOfLecturesPerSemester = `-- name: UpdateCourseNumberOfLecturesPerSemester :exec
+UPDATE courses
+SET num_of_lectures_per_semester = $2
+WHERE course_code = $1
+`
+
+type UpdateCourseNumberOfLecturesPerSemesterParams struct {
+	CourseCode               string `json:"course_code"`
+	NumOfLecturesPerSemester int32  `json:"num_of_lectures_per_semester"`
+}
+
+func (q *Queries) UpdateCourseNumberOfLecturesPerSemester(ctx context.Context, arg UpdateCourseNumberOfLecturesPerSemesterParams) error {
+	_, err := q.exec(ctx, q.updateCourseNumberOfLecturesPerSemesterStmt, updateCourseNumberOfLecturesPerSemester, arg.CourseCode, arg.NumOfLecturesPerSemester)
+	return err
+}
+
+const updateLecturerAttendedCount = `-- name: UpdateLecturerAttendedCount :exec
+UPDATE courses
+SET lecturer_attended_count = lecturer_attended_count + 1
+WHERE course_code = $1
+`
+
+func (q *Queries) UpdateLecturerAttendedCount(ctx context.Context, courseCode string) error {
+	_, err := q.exec(ctx, q.updateLecturerAttendedCountStmt, updateLecturerAttendedCount, courseCode)
+	return err
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/ekefan/afitlmscloud/internal/repository"
+	"github.com/ekefan/afitlmscloud/services/attendance"
 	"github.com/ekefan/afitlmscloud/services/course"
 	"github.com/ekefan/afitlmscloud/services/user"
 	"github.com/ekefan/afitlmscloud/services/user/lecturer"
@@ -12,28 +13,31 @@ import (
 )
 
 type Server struct {
-	router        *gin.Engine
-	userService   *user.UserService
-	courseService *course.CourseService
+	router            *gin.Engine
+	userService       *user.UserService
+	courseService     *course.CourseService
+	attendanceService *attendance.AttendanceService
 }
 
 func NewServer(dbConn *sql.DB) *Server {
 	courseService := course.NewCourseService(repository.NewCourseStore(dbConn))
 	studentService := student.NewStudentService(courseService, repository.NewStudentStore(dbConn))
 	lecturerService := lecturer.NewLecturerService(courseService, repository.NewLecturerStore(dbConn))
+	userService := user.NewUserService(repository.NewUserStore(dbConn), repository.NewStudentStore(dbConn),
+		studentService, lecturerService,
+	)
+	attendanceService := attendance.NewAttendanceService(courseService, repository.NewAttendanceStore(dbConn))
 
 	server := &Server{
-		router: gin.Default(),
-		userService: user.NewUserService(
-			repository.NewUserStore(dbConn),
-			repository.NewStudentStore(dbConn),
-			studentService,
-			lecturerService,
-		),
-		courseService: courseService,
+		router:            gin.Default(),
+		userService:       userService,
+		courseService:     courseService,
+		attendanceService: attendanceService,
 	}
 	server.registerUserRoutes()
 	server.registerCourseRoutes()
+	server.registerAttendanceRoutes()
+
 	return server
 }
 

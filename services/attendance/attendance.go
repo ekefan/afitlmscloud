@@ -8,6 +8,7 @@ import (
 
 	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
 	"github.com/ekefan/afitlmscloud/internal/repository"
+	"github.com/ekefan/afitlmscloud/services/course"
 )
 
 var (
@@ -15,12 +16,14 @@ var (
 )
 
 type AttendanceService struct {
-	repo repository.AttendanceRepository
+	repo          repository.AttendanceRepository
+	courseService *course.CourseService
 }
 
-func NewAttendanceService(attendanceRepository repository.AttendanceRepository) *AttendanceService {
+func NewAttendanceService(courseService *course.CourseService, attendanceRepository repository.AttendanceRepository) *AttendanceService {
 	return &AttendanceService{
-		repo: attendanceRepository,
+		repo:          attendanceRepository,
+		courseService: courseService,
 	}
 }
 
@@ -31,7 +34,7 @@ type AttendanceSession struct {
 	AttendanceData []repository.LectureAttendanceParams `json:"attendance_data"`
 }
 
-func (as *AttendanceService) CreateNewAttendanceSession(ctx context.Context, attendanceSession AttendanceSession) error {
+func (as *AttendanceService) createNewAttendanceSession(ctx context.Context, attendanceSession AttendanceSession) error {
 	err := as.repo.CreateAttendanceSession(ctx, repository.AttendanceSessionParams{
 		AttendanceData: attendanceSession.AttendanceData,
 		CreateLectureSessionParams: db.CreateLectureSessionParams{
@@ -44,6 +47,24 @@ func (as *AttendanceService) CreateNewAttendanceSession(ctx context.Context, att
 	if err != nil {
 		slog.Error("failed to create attendance session", "error", err)
 		return ErrFailedToCreateAttendanceSession
+	}
+
+	studentData := make([]repository.StudentAttendanceData, len(attendanceSession.AttendanceData))
+	for i, data := range attendanceSession.AttendanceData {
+		studentData[i] = repository.StudentAttendanceData{
+			StudentID: data.StudentID,
+			Attended:  data.Attended,
+		}
+	}
+	lectureMetaDataUpdate := course.UpdateCourseLectureMetaData{
+		CourseCode:               attendanceSession.CourseCode,
+		LecturerID:               attendanceSession.LecturerID,
+		StudentAttendanceRecords: studentData,
+	}
+	err = as.courseService.OnAttendanceSessionCreated(ctx, lectureMetaDataUpdate)
+	if err != nil {
+		slog.Error("failed to update availability and eligibility for users", "error", err)
+		return err
 	}
 	return nil
 }

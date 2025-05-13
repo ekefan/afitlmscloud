@@ -12,14 +12,17 @@ import (
 const getAllStudentsEligibilityForCourse = `-- name: GetAllStudentsEligibilityForCourse :many
 SELECT
     cs.student_id,
-    cs.eligibility
+    cs.attended_lecture_count,
+    c.num_of_lectures_per_semester
 FROM course_students cs
+JOIN courses c ON c.course_code = cs.course_code
 WHERE cs.course_code = $1
 `
 
 type GetAllStudentsEligibilityForCourseRow struct {
-	StudentID   int64   `json:"student_id"`
-	Eligibility float64 `json:"eligibility"`
+	StudentID                int64 `json:"student_id"`
+	AttendedLectureCount     int32 `json:"attended_lecture_count"`
+	NumOfLecturesPerSemester int32 `json:"num_of_lectures_per_semester"`
 }
 
 func (q *Queries) GetAllStudentsEligibilityForCourse(ctx context.Context, courseCode string) ([]GetAllStudentsEligibilityForCourseRow, error) {
@@ -31,7 +34,7 @@ func (q *Queries) GetAllStudentsEligibilityForCourse(ctx context.Context, course
 	items := []GetAllStudentsEligibilityForCourseRow{}
 	for rows.Next() {
 		var i GetAllStudentsEligibilityForCourseRow
-		if err := rows.Scan(&i.StudentID, &i.Eligibility); err != nil {
+		if err := rows.Scan(&i.StudentID, &i.AttendedLectureCount, &i.NumOfLecturesPerSemester); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -47,18 +50,20 @@ func (q *Queries) GetAllStudentsEligibilityForCourse(ctx context.Context, course
 
 const getStudentEligibilityForAllCourses = `-- name: GetStudentEligibilityForAllCourses :many
 SELECT
-    c.name As course_name,
-    cs.eligibility,
-    c.course_code
+    c.name AS course_name,
+    c.course_code,
+    cs.attended_lecture_count,
+    c.num_of_lectures_per_semester
 FROM course_students cs
 JOIN courses c ON c.course_code = cs.course_code
 WHERE cs.student_id = $1
 `
 
 type GetStudentEligibilityForAllCoursesRow struct {
-	CourseName  string  `json:"course_name"`
-	Eligibility float64 `json:"eligibility"`
-	CourseCode  string  `json:"course_code"`
+	CourseName               string `json:"course_name"`
+	CourseCode               string `json:"course_code"`
+	AttendedLectureCount     int32  `json:"attended_lecture_count"`
+	NumOfLecturesPerSemester int32  `json:"num_of_lectures_per_semester"`
 }
 
 func (q *Queries) GetStudentEligibilityForAllCourses(ctx context.Context, studentID int64) ([]GetStudentEligibilityForAllCoursesRow, error) {
@@ -70,7 +75,12 @@ func (q *Queries) GetStudentEligibilityForAllCourses(ctx context.Context, studen
 	items := []GetStudentEligibilityForAllCoursesRow{}
 	for rows.Next() {
 		var i GetStudentEligibilityForAllCoursesRow
-		if err := rows.Scan(&i.CourseName, &i.Eligibility, &i.CourseCode); err != nil {
+		if err := rows.Scan(
+			&i.CourseName,
+			&i.CourseCode,
+			&i.AttendedLectureCount,
+			&i.NumOfLecturesPerSemester,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -82,4 +92,20 @@ func (q *Queries) GetStudentEligibilityForAllCourses(ctx context.Context, studen
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateStudentStudentEligibility = `-- name: UpdateStudentStudentEligibility :exec
+UPDATE course_students
+SET attended_lecture_count = attended_lecture_count + 1
+WHERE student_id = $2 AND course_code = $1
+`
+
+type UpdateStudentStudentEligibilityParams struct {
+	CourseCode string `json:"course_code"`
+	StudentID  int64  `json:"student_id"`
+}
+
+func (q *Queries) UpdateStudentStudentEligibility(ctx context.Context, arg UpdateStudentStudentEligibilityParams) error {
+	_, err := q.exec(ctx, q.updateStudentStudentEligibilityStmt, updateStudentStudentEligibility, arg.CourseCode, arg.StudentID)
+	return err
 }

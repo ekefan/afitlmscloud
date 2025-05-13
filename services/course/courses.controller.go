@@ -72,3 +72,24 @@ func (csvc *CourseService) DeleteCourse(ctx *gin.Context) {
 	}
 	ctx.Status(http.StatusAccepted)
 }
+
+func (csvc *CourseService) UpdateCourseNumberOfLecterPerSemester(ctx *gin.Context) {
+	num_of_courses_per_semester, ok := ctx.GetQuery("num_of_courses_per_semester")
+	course_code, courseCodeExists := ctx.GetQuery("course_code")
+	if !ok || !courseCodeExists {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid query param",
+			"error":   "no query with key: 'num_of_courses_per_semester' or 'course_code' found",
+		})
+		return
+	}
+	err := csvc.updateCourseNumberOfLecterPerSemester(ctx, course_code, num_of_courses_per_semester)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to update the course to set num_of courses_per_semester",
+			"error":   err.Error(),
+		})
+		return
+	}
+	ctx.Status(http.StatusAccepted)
+}
