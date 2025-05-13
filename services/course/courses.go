@@ -3,7 +3,6 @@ package course
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strconv"
 
@@ -192,7 +191,6 @@ func (csvc *CourseService) GetStudentEligibilityList(ctx context.Context, course
 
 	studentData := make([]StudentEligibilityList, len(dbres))
 	for i, data := range dbres {
-		fmt.Println(dbres[i].AttendedLectureCount, dbres[i].NumOfLecturesPerSemester)
 		eligibilityData := StudentEligibilityList{
 			StudentID:        data.StudentID,
 			EligibilityValue: float64(data.AttendedLectureCount) / float64(data.NumOfLecturesPerSemester),
