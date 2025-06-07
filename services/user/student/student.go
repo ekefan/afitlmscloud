@@ -49,7 +49,10 @@ func (s *StudentService) DropCourses(ctx context.Context, studentID int64, cours
 	return nil
 }
 
-type StudentEligibility map[int64][]course.Eligibility
+type StudentEligibility struct {
+	Courses   []course.Eligibility `json:"courses"`
+	StudentID int64                `json:"id"`
+}
 
 func (s *StudentService) CheckEligibilityStatus(ctx context.Context, studentID int64) (StudentEligibility, error) {
 	courseEligibilities, err := s.courseService.GetStudentEligibilityForAllCourses(ctx, studentID)
@@ -58,7 +61,8 @@ func (s *StudentService) CheckEligibilityStatus(ctx context.Context, studentID i
 		return StudentEligibility{}, err
 	}
 	res := StudentEligibility{
-		studentID: courseEligibilities,
+		Courses:   courseEligibilities,
+		StudentID: studentID,
 	}
 	return res, nil
 }

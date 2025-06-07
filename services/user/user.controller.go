@@ -41,7 +41,7 @@ type RegisterCourseReq struct {
 func (us *UserService) EnrollUser(ctx *gin.Context) {
 	var req EnrollmentReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		slog.Error("invalid request")
+		slog.Error("invalid request", "details", err, "request", req)
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "invalid enrollment data",
 			"error":   err.Error(),

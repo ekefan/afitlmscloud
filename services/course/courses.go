@@ -28,15 +28,15 @@ type CourseService struct {
 }
 
 type Eligibility struct {
-	CourseCode       string
-	CourseName       string
-	EligibilityValue float64
+	CourseCode       string  `json:"course_code"`
+	CourseName       string  `json:"course_name"`
+	EligibilityValue float64 `json:"eligibility"`
 }
 
 type Availability struct {
-	CourseCode   string
-	CourseName   string
-	Availability float64
+	CourseCode   string  `json:"course_code"`
+	CourseName   string  `json:"course_name"`
+	Availability float64 `json:"availability"`
 }
 
 func NewCourseService(courseRepository repository.CourseRepository) *CourseService {
@@ -91,12 +91,20 @@ func (csvc *CourseService) GetStudentEligibilityForAllCourses(ctx context.Contex
 
 	eligibility := []Eligibility{}
 	for _, e := range res {
+		var value float64
+		if e.NumOfLecturesPerSemester > 0 {
+			value = float64(e.AttendedLectureCount) / float64(e.NumOfLecturesPerSemester)
+		} else {
+			value = 0 // or use -1 or null-like marker, depending on your business logic
+		}
+
 		eligibility = append(eligibility, Eligibility{
 			CourseCode:       e.CourseCode,
 			CourseName:       e.CourseName,
-			EligibilityValue: float64(e.AttendedLectureCount) / float64(e.NumOfLecturesPerSemester),
+			EligibilityValue: value,
 		})
 	}
+
 	return eligibility, nil
 }
 

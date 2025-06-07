@@ -24,7 +24,7 @@ const (
 	// string rep of roles
 	StudentRole     = "student"
 	LecturerRole    = "lecturer"
-	QaAdminRole     = "qa_admin"
+	QaAdminRole     = "admin"
 	CourseAdminRole = "course_admin"
 )
 
@@ -40,7 +40,7 @@ func rolesToString(role int) string {
 	case lecturerRole:
 		return "lecturer"
 	case qaAdminRole:
-		return "qa_admin"
+		return "admin"
 	case courseAdminRole:
 		return "course_admin"
 	}
@@ -111,7 +111,7 @@ func (us *UserService) enrollUser(ctx context.Context, data EnrollmentData) erro
 var allowedRoles = map[string]bool{
 	"student":      true,
 	"lecturer":     true,
-	"qa_admin":     true,
+	"admin":        true,
 	"course_admin": true,
 }
 
