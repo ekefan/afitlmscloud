@@ -20,6 +20,7 @@ type CourseRepository interface {
 	GetCourseMetaData(ctx context.Context, courseCode string) (db.GetCourseMetaDataRow, error)
 	DeleteCourse(ctx context.Context, courseCode string) (sql.Result, error)
 	SetActiveLecturer(ctx context.Context, arg db.SetActiveLecturerParams) error
+	RemoveActiveLecturer(ctx context.Context, arg db.RemoveActiveLecturerParams) error
 	UpdateCourseNumberOfLecturesPerSemester(ctx context.Context, arg db.UpdateCourseNumberOfLecturesPerSemesterParams) error
 	HandleAttendanceSessionCreatedEvent(ctx context.Context, arg AttendanceSessionEventParams) error
 }

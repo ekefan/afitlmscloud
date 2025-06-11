@@ -27,6 +27,7 @@ type Querier interface {
 	GetAllStudentsEligibilityForCourse(ctx context.Context, courseCode string) ([]GetAllStudentsEligibilityForCourseRow, error)
 	GetCourse(ctx context.Context, courseCode string) (Course, error)
 	GetCourseMetaData(ctx context.Context, courseCode string) (GetCourseMetaDataRow, error)
+	GetCoursesFiltered(ctx context.Context, arg GetCoursesFilteredParams) ([]Course, error)
 	GetLectureAttendance(ctx context.Context, sessionID int64) ([]LectureAttendance, error)
 	GetLectureSession(ctx context.Context, courseCode string) ([]LectureSession, error)
 	GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]GetLecturerAvailabilityForAllCoursesRow, error)
@@ -38,6 +39,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	RegisterCourse(ctx context.Context, arg RegisterCourseParams) error
+	RemoveActiveLecturer(ctx context.Context, arg RemoveActiveLecturerParams) error
 	SetActiveLecturer(ctx context.Context, arg SetActiveLecturerParams) error
 	UnassignLecturerFromCourse(ctx context.Context, arg UnassignLecturerFromCourseParams) (sql.Result, error)
 	UpdateCourseNumberOfLecturesPerSemester(ctx context.Context, arg UpdateCourseNumberOfLecturesPerSemesterParams) error

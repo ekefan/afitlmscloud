@@ -13,16 +13,18 @@ const getLecturerAvailabilityForAllCourses = `-- name: GetLecturerAvailabilityFo
 SELECT
     c.name As course_name,
     cl.availability,
-    c.course_code
+    c.course_code,
+    c.active_lecturer_id
 FROM course_lecturers cl
 JOIN courses c ON c.course_code = cl.course_code
 WHERE cl.lecturer_id = $1
 `
 
 type GetLecturerAvailabilityForAllCoursesRow struct {
-	CourseName   string `json:"course_name"`
-	Availability int32  `json:"availability"`
-	CourseCode   string `json:"course_code"`
+	CourseName       string `json:"course_name"`
+	Availability     int32  `json:"availability"`
+	CourseCode       string `json:"course_code"`
+	ActiveLecturerID int64  `json:"active_lecturer_id"`
 }
 
 func (q *Queries) GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]GetLecturerAvailabilityForAllCoursesRow, error) {
@@ -34,7 +36,12 @@ func (q *Queries) GetLecturerAvailabilityForAllCourses(ctx context.Context, lect
 	items := []GetLecturerAvailabilityForAllCoursesRow{}
 	for rows.Next() {
 		var i GetLecturerAvailabilityForAllCoursesRow
-		if err := rows.Scan(&i.CourseName, &i.Availability, &i.CourseCode); err != nil {
+		if err := rows.Scan(
+			&i.CourseName,
+			&i.Availability,
+			&i.CourseCode,
+			&i.ActiveLecturerID,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -268,6 +268,8 @@ func (us *UserService) RegisterCourses(ctx *gin.Context) {
 		})
 		return
 	}
+
+	ctx.Status(http.StatusAccepted)
 }
 
 func (us *UserService) CheckEligibilityForAllRegisteredCourses(ctx *gin.Context) {
@@ -385,6 +387,27 @@ func (us *UserService) SetActiveLecturer(ctx *gin.Context) {
 	}
 
 	err := us.lecturerService.SetActiveLecturer(ctx, int64(userId), courseCode)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error,
+		})
+	}
+	ctx.Status(http.StatusAccepted)
+}
+
+func (us *UserService) RemoveActiveLecturer(ctx *gin.Context) {
+	lecturerId, idErr := strconv.Atoi(ctx.Param("id"))
+	courseCode := ctx.Param("course_code")
+	if lecturerId < 1 ||
+		idErr != nil ||
+		courseCode == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "valid integer user id is required",
+		})
+		return
+	}
+
+	err := us.lecturerService.RemoveActiveLecturer(ctx, int64(lecturerId), courseCode)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error,

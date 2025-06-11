@@ -13,6 +13,13 @@ INSERT INTO courses (
 SELECT * FROM courses
 WHERE course_code = $1;
 
+-- name: GetCoursesFiltered :many
+SELECT * FROM courses
+WHERE
+    (sqlc.narg(faculty)::TEXT IS NULL OR faculty = sqlc.narg(faculty)::TEXT) AND
+    (sqlc.narg(department)::TEXT IS NULL OR department = sqlc.narg(department)::TEXT) AND
+    (sqlc.narg(level)::TEXT IS NULL OR level = sqlc.narg(level)::TEXT);
+
 -- name: RegisterCourse :exec
 INSERT INTO course_students (
     course_code,
@@ -47,6 +54,12 @@ UPDATE courses
 SET
     active_lecturer_id = $1
 WHERE active_lecturer_id = 0 AND course_code = $2;
+
+
+-- name: RemoveActiveLecturer :exec
+UPDATE courses
+set active_lecturer_id = 0
+WHERE active_lecturer_id = $1 AND course_code = $2;
 
 -- name: GetCourseMetaData :one
 SELECT

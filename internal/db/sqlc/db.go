@@ -75,6 +75,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getCourseMetaDataStmt, err = db.PrepareContext(ctx, getCourseMetaData); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCourseMetaData: %w", err)
 	}
+	if q.getCoursesFilteredStmt, err = db.PrepareContext(ctx, getCoursesFiltered); err != nil {
+		return nil, fmt.Errorf("error preparing query GetCoursesFiltered: %w", err)
+	}
 	if q.getLectureAttendanceStmt, err = db.PrepareContext(ctx, getLectureAttendance); err != nil {
 		return nil, fmt.Errorf("error preparing query GetLectureAttendance: %w", err)
 	}
@@ -107,6 +110,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.registerCourseStmt, err = db.PrepareContext(ctx, registerCourse); err != nil {
 		return nil, fmt.Errorf("error preparing query RegisterCourse: %w", err)
+	}
+	if q.removeActiveLecturerStmt, err = db.PrepareContext(ctx, removeActiveLecturer); err != nil {
+		return nil, fmt.Errorf("error preparing query RemoveActiveLecturer: %w", err)
 	}
 	if q.setActiveLecturerStmt, err = db.PrepareContext(ctx, setActiveLecturer); err != nil {
 		return nil, fmt.Errorf("error preparing query SetActiveLecturer: %w", err)
@@ -225,6 +231,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getCourseMetaDataStmt: %w", cerr)
 		}
 	}
+	if q.getCoursesFilteredStmt != nil {
+		if cerr := q.getCoursesFilteredStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getCoursesFilteredStmt: %w", cerr)
+		}
+	}
 	if q.getLectureAttendanceStmt != nil {
 		if cerr := q.getLectureAttendanceStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getLectureAttendanceStmt: %w", cerr)
@@ -278,6 +289,11 @@ func (q *Queries) Close() error {
 	if q.registerCourseStmt != nil {
 		if cerr := q.registerCourseStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing registerCourseStmt: %w", cerr)
+		}
+	}
+	if q.removeActiveLecturerStmt != nil {
+		if cerr := q.removeActiveLecturerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing removeActiveLecturerStmt: %w", cerr)
 		}
 	}
 	if q.setActiveLecturerStmt != nil {
@@ -381,6 +397,7 @@ type Queries struct {
 	getAllStudentsEligibilityForCourseStmt      *sql.Stmt
 	getCourseStmt                               *sql.Stmt
 	getCourseMetaDataStmt                       *sql.Stmt
+	getCoursesFilteredStmt                      *sql.Stmt
 	getLectureAttendanceStmt                    *sql.Stmt
 	getLectureSessionStmt                       *sql.Stmt
 	getLecturerAvailabilityForAllCoursesStmt    *sql.Stmt
@@ -392,6 +409,7 @@ type Queries struct {
 	getUserByEmailStmt                          *sql.Stmt
 	getUserByIDStmt                             *sql.Stmt
 	registerCourseStmt                          *sql.Stmt
+	removeActiveLecturerStmt                    *sql.Stmt
 	setActiveLecturerStmt                       *sql.Stmt
 	unassignLecturerFromCourseStmt              *sql.Stmt
 	updateCourseNumberOfLecturesPerSemesterStmt *sql.Stmt
@@ -424,6 +442,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getAllStudentsEligibilityForCourseStmt:      q.getAllStudentsEligibilityForCourseStmt,
 		getCourseStmt:                               q.getCourseStmt,
 		getCourseMetaDataStmt:                       q.getCourseMetaDataStmt,
+		getCoursesFilteredStmt:                      q.getCoursesFilteredStmt,
 		getLectureAttendanceStmt:                    q.getLectureAttendanceStmt,
 		getLectureSessionStmt:                       q.getLectureSessionStmt,
 		getLecturerAvailabilityForAllCoursesStmt:    q.getLecturerAvailabilityForAllCoursesStmt,
@@ -435,6 +454,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getUserByEmailStmt:                          q.getUserByEmailStmt,
 		getUserByIDStmt:                             q.getUserByIDStmt,
 		registerCourseStmt:                          q.registerCourseStmt,
+		removeActiveLecturerStmt:                    q.removeActiveLecturerStmt,
 		setActiveLecturerStmt:                       q.setActiveLecturerStmt,
 		unassignLecturerFromCourseStmt:              q.unassignLecturerFromCourseStmt,
 		updateCourseNumberOfLecturesPerSemesterStmt: q.updateCourseNumberOfLecturesPerSemesterStmt,

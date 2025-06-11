@@ -146,6 +146,53 @@ func (q *Queries) GetCourseMetaData(ctx context.Context, courseCode string) (Get
 	return i, err
 }
 
+const getCoursesFiltered = `-- name: GetCoursesFiltered :many
+SELECT id, name, faculty, department, level, course_code, num_of_lectures_per_semester, lecturer_attended_count, active_lecturer_id FROM courses
+WHERE
+    ($1::TEXT IS NULL OR faculty = $1::TEXT) AND
+    ($2::TEXT IS NULL OR department = $2::TEXT) AND
+    ($3::TEXT IS NULL OR level = $3::TEXT)
+`
+
+type GetCoursesFilteredParams struct {
+	Faculty    sql.NullString `json:"faculty"`
+	Department sql.NullString `json:"department"`
+	Level      sql.NullString `json:"level"`
+}
+
+func (q *Queries) GetCoursesFiltered(ctx context.Context, arg GetCoursesFilteredParams) ([]Course, error) {
+	rows, err := q.query(ctx, q.getCoursesFilteredStmt, getCoursesFiltered, arg.Faculty, arg.Department, arg.Level)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Course{}
+	for rows.Next() {
+		var i Course
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Faculty,
+			&i.Department,
+			&i.Level,
+			&i.CourseCode,
+			&i.NumOfLecturesPerSemester,
+			&i.LecturerAttendedCount,
+			&i.ActiveLecturerID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const registerCourse = `-- name: RegisterCourse :exec
 INSERT INTO course_students (
     course_code,
@@ -162,6 +209,22 @@ type RegisterCourseParams struct {
 
 func (q *Queries) RegisterCourse(ctx context.Context, arg RegisterCourseParams) error {
 	_, err := q.exec(ctx, q.registerCourseStmt, registerCourse, arg.CourseCode, arg.StudentID)
+	return err
+}
+
+const removeActiveLecturer = `-- name: RemoveActiveLecturer :exec
+UPDATE courses
+set active_lecturer_id = 0
+WHERE active_lecturer_id = $1 AND course_code = $2
+`
+
+type RemoveActiveLecturerParams struct {
+	ActiveLecturerID int64  `json:"active_lecturer_id"`
+	CourseCode       string `json:"course_code"`
+}
+
+func (q *Queries) RemoveActiveLecturer(ctx context.Context, arg RemoveActiveLecturerParams) error {
+	_, err := q.exec(ctx, q.removeActiveLecturerStmt, removeActiveLecturer, arg.ActiveLecturerID, arg.CourseCode)
 	return err
 }
 

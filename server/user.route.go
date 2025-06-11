@@ -22,5 +22,6 @@ func (s *Server) registerUserRoutes() {
 	lecturer.GET("/:id/availability", s.userService.CheckAvailabilityForAllAssignedCourses)
 	lecturer.DELETE("/:id/course_assignments/:course_code", s.userService.UnassignCourses)
 	lecturer.PUT("/:id/course_assignments/:course_code", s.userService.SetActiveLecturer)
+	lecturer.PUT("/:id/course_assignments/:course_code/:old_lecturer_id", s.userService.RemoveActiveLecturer)
 
 }

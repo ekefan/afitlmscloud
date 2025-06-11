@@ -73,7 +73,9 @@ func (ls *LecturerService) UnassignLecturerFromCourse(ctx context.Context, lectu
 	return nil
 }
 
-type LecturerAvailability map[int64][]course.Availability
+type LecturerAvailability struct {
+	CourseAvailability []course.Availability `json:"course_availability"`
+}
 
 func (ls *LecturerService) CheckAvailabilityStatus(ctx context.Context, lectuerID int64) (LecturerAvailability, error) {
 	courseAvailabilities, err := ls.courseService.GetLecturerAvailabilityForAllCourses(ctx, lectuerID)
@@ -82,13 +84,21 @@ func (ls *LecturerService) CheckAvailabilityStatus(ctx context.Context, lectuerI
 		return LecturerAvailability{}, err
 	}
 	res := LecturerAvailability{
-		lectuerID: courseAvailabilities,
+		CourseAvailability: courseAvailabilities,
 	}
 	return res, nil
 }
 
 func (ls *LecturerService) SetActiveLecturer(ctx context.Context, lecturerID int64, courseCode string) error {
 	err := ls.courseService.SetActiveLecturer(ctx, lecturerID, courseCode)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ls *LecturerService) RemoveActiveLecturer(ctx context.Context, lectuererId int64, courseCode string) error {
+	err := ls.courseService.RemoveActiveLecturer(ctx, lectuererId, courseCode)
 	if err != nil {
 		return err
 	}

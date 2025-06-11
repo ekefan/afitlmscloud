@@ -34,9 +34,10 @@ type Eligibility struct {
 }
 
 type Availability struct {
-	CourseCode   string  `json:"course_code"`
-	CourseName   string  `json:"course_name"`
-	Availability float64 `json:"availability"`
+	CourseCode       string  `json:"course_code"`
+	CourseName       string  `json:"course_name"`
+	ActiveLecturerId int64   `json:"active_lecturer_id"`
+	Availability     float64 `json:"availability"`
 }
 
 func NewCourseService(courseRepository repository.CourseRepository) *CourseService {
@@ -146,9 +147,10 @@ func (csvc *CourseService) GetLecturerAvailabilityForAllCourses(ctx context.Cont
 	availability := make([]Availability, len(res))
 	for i, e := range res {
 		availability[i] = Availability{
-			CourseCode:   e.CourseCode,
-			CourseName:   e.CourseName,
-			Availability: float64(e.Availability),
+			CourseCode:       e.CourseCode,
+			CourseName:       e.CourseName,
+			ActiveLecturerId: e.ActiveLecturerID,
+			Availability:     float64(e.Availability),
 		}
 	}
 	return availability, nil
@@ -163,6 +165,18 @@ func (csvc *CourseService) SetActiveLecturer(ctx context.Context, lecturerID int
 		return ErrFailedToSetActiveLecturer
 	}
 
+	// TODO: Send ActiveLecturerEvent...
+	return nil
+}
+
+func (csvc *CourseService) RemoveActiveLecturer(ctx context.Context, lecturerID int64, courseCode string) error {
+	err := csvc.repo.RemoveActiveLecturer(ctx, db.RemoveActiveLecturerParams{
+		ActiveLecturerID: lecturerID,
+		CourseCode:       courseCode})
+	if err != nil {
+		slog.Error("failed to remove active lecturer id", "error", err)
+		return ErrFailedToSetActiveLecturer
+	}
 	// TODO: Send ActiveLecturerEvent...
 	return nil
 }
