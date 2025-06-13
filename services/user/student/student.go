@@ -77,7 +77,7 @@ type CourseData struct {
 	CourseName string `json:"course_name"`
 	Faculty    string `json:"faculty"`
 	Level      string `json:"level"`
-	Department string `json:"Deparment"`
+	Department string `json:"department"`
 }
 type StudentEligibilityList struct {
 	CourseData      CourseData        `json:"course_data"`

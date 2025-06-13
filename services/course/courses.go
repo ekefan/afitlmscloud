@@ -2,6 +2,7 @@ package course
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"strconv"
@@ -50,13 +51,48 @@ type UserCourseData struct {
 	UserID     int64
 	CourseCode string
 }
+type FilterCourseData struct {
+	Department sql.NullString `json:"department"`
+	Faculty    sql.NullString `json:"faculty"`
+	Level      sql.NullString `json:"level"`
+}
+
+func (csvc *CourseService) getCoursesFiltered(ctx context.Context, data FilterCourseData) ([]Course, error) {
+	dbres, err := csvc.repo.GetCoursesFiltered(ctx, db.GetCoursesFilteredParams{
+		Department: data.Department,
+		Faculty:    data.Faculty,
+		Level:      data.Level,
+	})
+
+	if err != nil {
+		slog.Error("failed to get a courses filtered", "error", err)
+		return []Course{}, err
+	}
+
+	resp := make([]Course, len(dbres))
+	for i, dbCourse := range dbres {
+		newCourse := Course{
+			CourseData: CourseData{
+				Name:       dbCourse.Name,
+				Faculty:    dbCourse.Faculty,
+				Level:      dbCourse.Level,
+				Department: dbCourse.Department,
+			},
+			CourseCode: dbCourse.CourseCode,
+		}
+		resp[i] = newCourse
+
+	}
+	return resp, nil
+
+}
 
 func (csvc *CourseService) RegisterCouse(ctx context.Context, data UserCourseData) error {
 	if err := csvc.repo.RegisterCourse(ctx, db.RegisterCourseParams{
 		StudentID:  data.UserID,
 		CourseCode: data.CourseCode,
 	}); err != nil {
-		slog.Error("failed to perform course operation", "error", err)
+		slog.Error("failed to perform course operation", "error", err, "data", data)
 		return ErrFailedToRegisterCourse
 	}
 	return nil
@@ -213,9 +249,15 @@ func (csvc *CourseService) GetStudentEligibilityList(ctx context.Context, course
 
 	studentData := make([]StudentEligibilityList, len(dbres))
 	for i, data := range dbres {
+		var value float64
+		if data.NumOfLecturesPerSemester > 0 {
+			value = float64(data.AttendedLectureCount) / float64(data.NumOfLecturesPerSemester)
+		} else {
+			value = 0 // or use -1 or null-like marker, depending on your business logic
+		}
 		eligibilityData := StudentEligibilityList{
 			StudentID:        data.StudentID,
-			EligibilityValue: float64(data.AttendedLectureCount) / float64(data.NumOfLecturesPerSemester),
+			EligibilityValue: value,
 		}
 		studentData[i] = eligibilityData
 	}

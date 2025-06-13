@@ -18,6 +18,7 @@ type CourseRepository interface {
 	GetLecturerAvailabilityForAllCourses(ctx context.Context, lecturerID int64) ([]db.GetLecturerAvailabilityForAllCoursesRow, error)
 	GetAllStudentsEligibilityForCourse(ctx context.Context, courseCode string) ([]db.GetAllStudentsEligibilityForCourseRow, error)
 	GetCourseMetaData(ctx context.Context, courseCode string) (db.GetCourseMetaDataRow, error)
+	GetCoursesFiltered(ctx context.Context, arg db.GetCoursesFilteredParams) ([]db.Course, error)
 	DeleteCourse(ctx context.Context, courseCode string) (sql.Result, error)
 	SetActiveLecturer(ctx context.Context, arg db.SetActiveLecturerParams) error
 	RemoveActiveLecturer(ctx context.Context, arg db.RemoveActiveLecturerParams) error

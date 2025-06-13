@@ -1,6 +1,7 @@
 package course
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -32,8 +33,8 @@ func (csvc *CourseService) CreateCourses(ctx *gin.Context) {
 }
 
 func (csvc *CourseService) GetCourse(ctx *gin.Context) {
-	courseCode, ok := ctx.GetQuery("course_code")
-	if !ok {
+	courseCode := ctx.Param("course_code")
+	if courseCode == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "invalid query param",
 			"error":   "no query with key: 'course_code' found",
@@ -49,13 +50,55 @@ func (csvc *CourseService) GetCourse(ctx *gin.Context) {
 		})
 		return
 	}
-
 	ctx.JSON(http.StatusOK, course)
 }
 
+func (csvc *CourseService) GetCoursesFiltered(ctx *gin.Context) {
+
+	var filter FilterCourseData
+	department, dok := ctx.GetQuery("department")
+	level, lok := ctx.GetQuery("level")
+	faculty, fok := ctx.GetQuery("faculty")
+
+	fmt.Println("level", level)
+	fmt.Println("department", department)
+	fmt.Println("faculty", faculty)
+
+	if fok {
+		filter.Faculty.String = faculty
+		filter.Faculty.Valid = true
+	} else {
+		filter.Faculty.Valid = false
+	}
+
+	if dok {
+		filter.Department.String = department
+		filter.Department.Valid = true
+	} else {
+		filter.Faculty.Valid = false
+	}
+
+	if lok {
+		filter.Level.String = level
+		filter.Level.Valid = true
+	} else {
+		filter.Faculty.Valid = false
+	}
+	courses, err := csvc.getCoursesFiltered(ctx, filter)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to create a new course",
+			"error":   err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, courses)
+
+}
+
 func (csvc *CourseService) DeleteCourse(ctx *gin.Context) {
-	courseCode, ok := ctx.GetQuery("course_code")
-	if !ok {
+	courseCode := ctx.Param("course_code")
+	if courseCode == " " {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "invalid query param",
 			"error":   "no query with key: 'course_code' found",

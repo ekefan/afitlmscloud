@@ -20,7 +20,7 @@ CREATE TABLE course_lecturers (
     
     PRIMARY KEY (course_code, lecturer_id),
     
-    FOREIGN KEY (course_code) REFERENCES courses(course_code) ON DELETE CASCADE
+    FOREIGN KEY (course_code) REFERENCES courses(course_code)
 );
 
 CREATE TABLE course_students (
@@ -30,7 +30,7 @@ CREATE TABLE course_students (
     updated_at TIMESTAMP DEFAULT now(),
 
     PRIMARY KEY (course_code, student_id),
-    FOREIGN KEY (course_code) REFERENCES courses(course_code) ON DELETE CASCADE
+    FOREIGN KEY (course_code) REFERENCES courses(course_code)
 );
 
 
