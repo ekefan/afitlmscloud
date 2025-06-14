@@ -7,6 +7,7 @@ import (
 	"github.com/ekefan/afitlmscloud/internal/repository"
 	"github.com/ekefan/afitlmscloud/services/attendance"
 	"github.com/ekefan/afitlmscloud/services/course"
+	"github.com/ekefan/afitlmscloud/services/enrollment"
 	"github.com/ekefan/afitlmscloud/services/user"
 	"github.com/ekefan/afitlmscloud/services/user/lecturer"
 	"github.com/ekefan/afitlmscloud/services/user/student"
@@ -19,6 +20,7 @@ type Server struct {
 	userService       *user.UserService
 	courseService     *course.CourseService
 	attendanceService *attendance.AttendanceService
+	enrollmentService *enrollment.EnrollmentService
 }
 
 func NewServer(dbConn *sql.DB) *Server {
@@ -35,11 +37,13 @@ func NewServer(dbConn *sql.DB) *Server {
 		userService:       userService,
 		courseService:     courseService,
 		attendanceService: attendanceService,
+		enrollmentService: &enrollment.EnrollmentService{FastAPIBaseURL: "http://localhost:8000"},
 	}
 	server.handleCors()
 	server.registerUserRoutes()
 	server.registerCourseRoutes()
 	server.registerAttendanceRoutes()
+	server.registerEnrollmentRoutes()
 
 	return server
 }
