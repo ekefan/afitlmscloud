@@ -11,13 +11,16 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/ekefan/afitlmscloud/internal/repository"
 	"github.com/gorilla/websocket"
 )
 
 // Define the structure of the initial HTTP POST request payload for FastAPI
 type FastAPIEnrollInitialRequest struct {
-	Username string `json:"username"`
-	UniqueID string `json:"unique_id"`
+	ID       int64    `json:"id"`
+	Roles    []string `json:"roles"`
+	Username string   `json:"username"`
+	UniqueID string   `json:"unique_id"`
 }
 
 // Define the structure of the initial HTTP POST response from FastAPI
@@ -58,13 +61,15 @@ type WebSocketFailedData struct {
 
 // EnrollmentService is a service that handles enrollment operations.
 type EnrollmentService struct {
-	FastAPIBaseURL string // Base URL of your FastAPI server (e.g., "http://localhost:8000")
+	FastAPIBaseURL string
+	userRepo       repository.UserRespository
 }
 
 // NewEnrollmentService creates a new instance of EnrollmentService.
-func NewEnrollmentService(fastAPIBaseURL string) *EnrollmentService {
+func NewEnrollmentService(fastAPIBaseURL string, userRepo repository.UserRespository) *EnrollmentService {
 	return &EnrollmentService{
 		FastAPIBaseURL: fastAPIBaseURL,
+		userRepo:       userRepo,
 	}
 }
 

@@ -2,6 +2,7 @@ CREATE TABLE "users" (
   "id" bigserial PRIMARY KEY,
   "full_name" varchar NOT NULL,
   "roles" TEXT[],
+  "card_uid" varchar NOT NULL,
   "enrolled" boolean NOT NULL DEFAULT false,
   "email" varchar UNIQUE NOT NULL,
   "sch_id" varchar UNIQUE NOT NULL,

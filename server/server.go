@@ -37,7 +37,7 @@ func NewServer(dbConn *sql.DB) *Server {
 		userService:       userService,
 		courseService:     courseService,
 		attendanceService: attendanceService,
-		enrollmentService: &enrollment.EnrollmentService{FastAPIBaseURL: "http://localhost:8000"},
+		enrollmentService: &enrollment.EnrollmentService{FastAPIBaseURL: "http://172.25.176.1:8000"},
 	}
 	server.handleCors()
 	server.registerUserRoutes()

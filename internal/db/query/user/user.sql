@@ -2,10 +2,12 @@
 INSERT INTO users (
     full_name,
     email,
+    roles,
+    enrolled,
     hashed_password,
     sch_id
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5, $6
 ) RETURNING *;
 
 -- name: UpdateUserPassword :one
@@ -23,16 +25,6 @@ SET
     email = sqlc.arg(new_email), -- new_email
     updated_at = now()
 WHERE id = sqlc.arg(id) AND email = sqlc.arg(old_email) -- old_email
-RETURNING *;
-
--- name: EnrollUser :one
-UPDATE users
-SET
-    roles = $2,
-    enrolled = $3,
-    updated_at = now()
-WHERE id = $1
-    AND users.enrolled IS DISTINCT FROM TRUE
 RETURNING *;
 
 -- name: GetUserByID :one

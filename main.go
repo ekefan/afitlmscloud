@@ -46,5 +46,5 @@ func main() {
 	}
 
 	server := server.NewServer(dbConn)
-	server.StartServer()
+	server.StartServer("")
 }

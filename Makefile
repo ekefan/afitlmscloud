@@ -26,3 +26,5 @@ migrate-down:
 
 migrate-up:
 	migrate -source ${MIGRATE_SOURCE} -database ${DB_URL} up
+check-ip:
+	cat /etc/resolv.conf | grep nameserver | awk '{print $2}'

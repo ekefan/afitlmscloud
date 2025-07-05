@@ -3,6 +3,7 @@ package enrollment
 import (
 	"log/slog"
 
+	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,6 +25,12 @@ func (es *EnrollmentService) Enroll(ctx *gin.Context) {
 		})
 		return
 	}
+
+	es.userRepo.EnrollUser(ctx, db.EnrollUserParams{
+		ID:       req.ID,
+		Roles:    req.Roles,
+		Enrolled: true,
+	})
 
 	ctx.JSON(200, gin.H{
 		"data": resp,

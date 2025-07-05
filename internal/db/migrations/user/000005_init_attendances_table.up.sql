@@ -1,9 +1,11 @@
 CREATE TABLE lecture_sessions (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT NOT NULL,
     course_code VARCHAR(10) NOT NULL,
     lecturer_id BIGINT NOT NULL,
     session_date DATE NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT  now()
+    created_at TIMESTAMP NOT NULL,
+
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE lecture_attendance (
