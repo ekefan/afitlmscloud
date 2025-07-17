@@ -1,7 +1,6 @@
 package course
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -59,10 +58,6 @@ func (csvc *CourseService) GetCoursesFiltered(ctx *gin.Context) {
 	department, dok := ctx.GetQuery("department")
 	level, lok := ctx.GetQuery("level")
 	faculty, fok := ctx.GetQuery("faculty")
-
-	fmt.Println("level", level)
-	fmt.Println("department", department)
-	fmt.Println("faculty", faculty)
 
 	if fok {
 		filter.Faculty.String = faculty

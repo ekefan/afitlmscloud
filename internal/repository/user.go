@@ -14,7 +14,6 @@ type UserRespository interface {
 	GetUserByEmail(ctx context.Context, email string) (db.User, error)
 	UpdateUserEmail(ctx context.Context, arg db.UpdateUserEmailParams) (db.User, error)
 	UpdateUserPassword(ctx context.Context, arg db.UpdateUserPasswordParams) (db.User, error)
-	EnrollUser(ctx context.Context, arg db.EnrollUserParams) (db.User, error)
 }
 
 var _ UserRespository = (*userStore)(nil)

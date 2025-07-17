@@ -1,8 +1,8 @@
 -- name: CreateStudent :one
 INSERT INTO students (
-    user_id, courses, biometric_template
+    user_id
 ) VALUES (
-    $1, $2, $3
+    $1
 ) RETURNING *;
 
 -- name: GetStudentByID :one

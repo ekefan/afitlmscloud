@@ -25,9 +25,11 @@ var (
 const DEFAULT_PASSWORD = "1234Afit"
 
 type CreateUserReq struct {
-	Fullname string `json:"fullname" binding:"required"`
-	Email    string `json:"email" binding:"email,required"`
-	SchId    string `json:"sch_id" binding:"required"`
+	Fullname string   `json:"fullname" binding:"required"`
+	Email    string   `json:"email" binding:"email,required"`
+	SchId    string   `json:"sch_id" binding:"required"`
+	Roles    []string `json:"roles" binding:"required"`
+	CardUid  string   `json:"card_uid"`
 }
 
 type ChangeUserPasswordReq struct {
@@ -71,51 +73,6 @@ func NewUserService(userRepo repository.UserRespository,
 		lecturerService: lecturerService,
 	}
 	return us
-}
-
-func (us *UserService) CreateUser(ctx *gin.Context) {
-	var req CreateUserReq
-
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request",
-		})
-		return
-	}
-	// TODO: Hash passwords, CrossOrigin stuff... Validation,
-	user, err := us.userRepo.CreateUser(ctx, db.CreateUserParams{
-		Email:          req.Email,
-		FullName:       req.Fullname,
-		SchID:          req.SchId,
-		HashedPassword: DEFAULT_PASSWORD,
-	})
-	if err != nil {
-		slog.Error("Unhandled error here", "detals", err)
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
-				column := ""
-				if pqErr.Constraint == "users_email_key" {
-					column = "email"
-				}
-				if pqErr.Constraint == "users_sch_id_key" {
-					column = "sch_id"
-				}
-				msg := fmt.Sprintf("%v already exists", column)
-				ctx.JSON(http.StatusBadRequest, gin.H{
-					"error": msg,
-				})
-			default:
-				slog.Error("Unhandled pq error", "details", pqErr)
-			}
-			return
-		}
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "created a new user",
-		"data":    user,
-	})
 }
 
 func (us *UserService) DeleteUser(ctx *gin.Context) {
@@ -294,4 +251,36 @@ func (us *UserService) changeUserEmail(ctx context.Context, data ChangeUserEmail
 	return userResponse, nil
 }
 
-// TODO: add functionality to add a course to the database....
+func (us *UserService) CreateUser(ctx context.Context, req CreateUserReq) (userId int64, err error) {
+	user, err := us.userRepo.CreateUser(ctx, db.CreateUserParams{
+		Email:          req.Email,
+		FullName:       req.Fullname,
+		SchID:          req.SchId,
+		Roles:          req.Roles,
+		CardUid:        req.CardUid,
+		Enrolled:       true,
+		HashedPassword: DEFAULT_PASSWORD,
+	})
+	if err != nil {
+		slog.Error("Unhandled error here", "detals", err)
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "unique_violation":
+				column := ""
+				if pqErr.Constraint == "users_email_key" {
+					column = "email"
+				}
+				if pqErr.Constraint == "users_sch_id_key" {
+					column = "sch_id"
+				}
+				msg := fmt.Sprintf("%v already exists", column)
+				return 0, fmt.Errorf("%s", msg)
+			default:
+				slog.Error("Unhandled pq error", "details", pqErr)
+			}
+			return 0, err
+		}
+		return 0, err
+	}
+	return user.ID, nil
+}

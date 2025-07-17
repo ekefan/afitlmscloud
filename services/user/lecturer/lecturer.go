@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 
-	db "github.com/ekefan/afitlmscloud/internal/db/sqlc"
 	"github.com/ekefan/afitlmscloud/internal/repository"
 	"github.com/ekefan/afitlmscloud/services/course"
 )
@@ -30,11 +29,8 @@ func NewLecturerService(courseService *course.CourseService, repo repository.Lec
 	}
 }
 
-func (ls *LecturerService) CreateLecturer(ctx context.Context, lecturerID int64, biometricTemplate string) (Lecturer, error) {
-	lecturer, err := ls.repo.CreateLecturer(ctx, db.CreateLecturerParams{
-		UserID:            lecturerID,
-		BiometricTemplate: biometricTemplate,
-	})
+func (ls *LecturerService) CreateLecturer(ctx context.Context, args int64) (Lecturer, error) {
+	lecturer, err := ls.repo.CreateLecturer(ctx, args)
 	if err != nil {
 		slog.Error("failed to create a new lecturer", "error", err)
 		return Lecturer{}, ErrFailedToCreateLecturer

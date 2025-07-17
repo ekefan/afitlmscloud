@@ -8,7 +8,7 @@ import (
 )
 
 type LecturerRepository interface {
-	CreateLecturer(ctx context.Context, arg db.CreateLecturerParams) (db.Lecturer, error)
+	CreateLecturer(ctx context.Context, arg int64) (db.Lecturer, error)
 	GetLecturerByID(ctx context.Context, id int64) (db.Lecturer, error)
 	GetLecturerByUserID(ctx context.Context, userID int64) (db.Lecturer, error)
 	UpdateLecturerCourses(ctx context.Context, arg db.UpdateLecturerCoursesParams) (db.Lecturer, error)

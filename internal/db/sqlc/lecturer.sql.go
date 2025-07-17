@@ -14,31 +14,18 @@ import (
 
 const createLecturer = `-- name: CreateLecturer :one
 INSERT INTO lecturers (
-    user_id, biometric_template, courses, courses_actively_teaching
+    user_id
 ) VALUES (
-    $1, $2, $3, $4
-) RETURNING id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability
+    $1
+) RETURNING id, user_id, courses, courses_actively_teaching, updated_at, weighted_availability
 `
 
-type CreateLecturerParams struct {
-	UserID                  int64    `json:"user_id"`
-	BiometricTemplate       string   `json:"biometric_template"`
-	Courses                 []string `json:"courses"`
-	CoursesActivelyTeaching []string `json:"courses_actively_teaching"`
-}
-
-func (q *Queries) CreateLecturer(ctx context.Context, arg CreateLecturerParams) (Lecturer, error) {
-	row := q.queryRow(ctx, q.createLecturerStmt, createLecturer,
-		arg.UserID,
-		arg.BiometricTemplate,
-		pq.Array(arg.Courses),
-		pq.Array(arg.CoursesActivelyTeaching),
-	)
+func (q *Queries) CreateLecturer(ctx context.Context, userID int64) (Lecturer, error) {
+	row := q.queryRow(ctx, q.createLecturerStmt, createLecturer, userID)
 	var i Lecturer
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.BiometricTemplate,
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,
@@ -56,7 +43,7 @@ func (q *Queries) DeleteLecturer(ctx context.Context, id int64) (sql.Result, err
 }
 
 const getLecturerByID = `-- name: GetLecturerByID :one
-SELECT id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability FROM lecturers WHERE id = $1
+SELECT id, user_id, courses, courses_actively_teaching, updated_at, weighted_availability FROM lecturers WHERE id = $1
 `
 
 func (q *Queries) GetLecturerByID(ctx context.Context, id int64) (Lecturer, error) {
@@ -65,7 +52,6 @@ func (q *Queries) GetLecturerByID(ctx context.Context, id int64) (Lecturer, erro
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.BiometricTemplate,
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,
@@ -75,7 +61,7 @@ func (q *Queries) GetLecturerByID(ctx context.Context, id int64) (Lecturer, erro
 }
 
 const getLecturerByUserID = `-- name: GetLecturerByUserID :one
-SELECT id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability FROM lecturers WHERE user_id = $1
+SELECT id, user_id, courses, courses_actively_teaching, updated_at, weighted_availability FROM lecturers WHERE user_id = $1
 `
 
 func (q *Queries) GetLecturerByUserID(ctx context.Context, userID int64) (Lecturer, error) {
@@ -84,7 +70,6 @@ func (q *Queries) GetLecturerByUserID(ctx context.Context, userID int64) (Lectur
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.BiometricTemplate,
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,
@@ -97,7 +82,7 @@ const updateLecturerCourses = `-- name: UpdateLecturerCourses :one
 UPDATE lecturers
 SET courses = $2, courses_actively_teaching = $3, updated_at = now()
 WHERE id = $1
-RETURNING id, user_id, biometric_template, courses, courses_actively_teaching, updated_at, weighted_availability
+RETURNING id, user_id, courses, courses_actively_teaching, updated_at, weighted_availability
 `
 
 type UpdateLecturerCoursesParams struct {
@@ -112,7 +97,6 @@ func (q *Queries) UpdateLecturerCourses(ctx context.Context, arg UpdateLecturerC
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.BiometricTemplate,
 		pq.Array(&i.Courses),
 		pq.Array(&i.CoursesActivelyTeaching),
 		&i.UpdatedAt,

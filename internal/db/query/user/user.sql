@@ -4,10 +4,11 @@ INSERT INTO users (
     email,
     roles,
     enrolled,
+    card_uid,
     hashed_password,
     sch_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
 ) RETURNING *;
 
 -- name: UpdateUserPassword :one

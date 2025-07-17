@@ -16,24 +16,33 @@ const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     full_name,
     email,
+    roles,
+    enrolled,
+    card_uid,
     hashed_password,
     sch_id
 ) VALUES (
-    $1, $2, $3, $4
-) RETURNING id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
+    $1, $2, $3, $4, $5, $6, $7
+) RETURNING id, full_name, roles, card_uid, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
 `
 
 type CreateUserParams struct {
-	FullName       string `json:"full_name"`
-	Email          string `json:"email"`
-	HashedPassword string `json:"hashed_password"`
-	SchID          string `json:"sch_id"`
+	FullName       string   `json:"full_name"`
+	Email          string   `json:"email"`
+	Roles          []string `json:"roles"`
+	Enrolled       bool     `json:"enrolled"`
+	CardUid        string   `json:"card_uid"`
+	HashedPassword string   `json:"hashed_password"`
+	SchID          string   `json:"sch_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.queryRow(ctx, q.createUserStmt, createUser,
 		arg.FullName,
 		arg.Email,
+		pq.Array(arg.Roles),
+		arg.Enrolled,
+		arg.CardUid,
 		arg.HashedPassword,
 		arg.SchID,
 	)
@@ -42,6 +51,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.ID,
 		&i.FullName,
 		pq.Array(&i.Roles),
+		&i.CardUid,
 		&i.Enrolled,
 		&i.Email,
 		&i.SchID,
@@ -62,43 +72,8 @@ func (q *Queries) DeleteUser(ctx context.Context, id int64) (sql.Result, error) 
 	return q.exec(ctx, q.deleteUserStmt, deleteUser, id)
 }
 
-const enrollUser = `-- name: EnrollUser :one
-UPDATE users
-SET
-    roles = $2,
-    enrolled = $3,
-    updated_at = now()
-WHERE id = $1
-    AND users.enrolled IS DISTINCT FROM TRUE
-RETURNING id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
-`
-
-type EnrollUserParams struct {
-	ID       int64    `json:"id"`
-	Roles    []string `json:"roles"`
-	Enrolled bool     `json:"enrolled"`
-}
-
-func (q *Queries) EnrollUser(ctx context.Context, arg EnrollUserParams) (User, error) {
-	row := q.queryRow(ctx, q.enrollUserStmt, enrollUser, arg.ID, pq.Array(arg.Roles), arg.Enrolled)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.FullName,
-		pq.Array(&i.Roles),
-		&i.Enrolled,
-		&i.Email,
-		&i.SchID,
-		&i.HashedPassword,
-		&i.PasswordChanged,
-		&i.UpdatedAt,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at FROM users
+SELECT id, full_name, roles, card_uid, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at FROM users
 WHERE email = $1
 `
 
@@ -109,6 +84,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.ID,
 		&i.FullName,
 		pq.Array(&i.Roles),
+		&i.CardUid,
 		&i.Enrolled,
 		&i.Email,
 		&i.SchID,
@@ -121,7 +97,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at FROM users
+SELECT id, full_name, roles, card_uid, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at FROM users
 WHERE id = $1
 `
 
@@ -132,6 +108,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 		&i.ID,
 		&i.FullName,
 		pq.Array(&i.Roles),
+		&i.CardUid,
 		&i.Enrolled,
 		&i.Email,
 		&i.SchID,
@@ -149,7 +126,7 @@ SET
     email = $1, -- new_email
     updated_at = now()
 WHERE id = $2 AND email = $3 -- old_email
-RETURNING id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
+RETURNING id, full_name, roles, card_uid, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
 `
 
 type UpdateUserEmailParams struct {
@@ -165,6 +142,7 @@ func (q *Queries) UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams
 		&i.ID,
 		&i.FullName,
 		pq.Array(&i.Roles),
+		&i.CardUid,
 		&i.Enrolled,
 		&i.Email,
 		&i.SchID,
@@ -183,7 +161,7 @@ SET
     password_changed = TRUE,
     updated_at = now()
 WHERE id = $1
-RETURNING id, full_name, roles, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
+RETURNING id, full_name, roles, card_uid, enrolled, email, sch_id, hashed_password, password_changed, updated_at, created_at
 `
 
 type UpdateUserPasswordParams struct {
@@ -198,6 +176,7 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 		&i.ID,
 		&i.FullName,
 		pq.Array(&i.Roles),
+		&i.CardUid,
 		&i.Enrolled,
 		&i.Email,
 		&i.SchID,

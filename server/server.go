@@ -30,6 +30,7 @@ func NewServer(dbConn *sql.DB) *Server {
 	userService := user.NewUserService(repository.NewUserStore(dbConn), repository.NewStudentStore(dbConn),
 		studentService, lecturerService,
 	)
+	enrollmentService := enrollment.NewEnrollmentService("http://172.25.176.1:8000", userService)
 	attendanceService := attendance.NewAttendanceService(courseService, repository.NewAttendanceStore(dbConn))
 
 	server := &Server{
@@ -37,7 +38,7 @@ func NewServer(dbConn *sql.DB) *Server {
 		userService:       userService,
 		courseService:     courseService,
 		attendanceService: attendanceService,
-		enrollmentService: &enrollment.EnrollmentService{FastAPIBaseURL: "http://172.25.176.1:8000"},
+		enrollmentService: enrollmentService,
 	}
 	server.handleCors()
 	server.registerUserRoutes()
@@ -62,7 +63,7 @@ func (s *Server) StartServer(addr ...string) {
 // TODO: handle the right origins
 func (s *Server) handleCors() {
 	s.router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "*"},
+		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

@@ -2,14 +2,12 @@ package server
 
 func (s *Server) registerUserRoutes() {
 	ur := s.router.Group("/users")
-	ur.POST("", s.userService.CreateUser)
 	ur.GET("/:id", s.userService.GetUser)
 	ur.PUT("/:id/password", s.userService.UpdateUserPassword)
 	ur.PUT("/:id/email", s.userService.UpdateUserEmail)
 	ur.DELETE("/:id", s.userService.DeleteUser)
 
 	ur.POST("/auth", s.userService.LoginUser)
-	ur.POST("/:id/enrollments", s.userService.EnrollUser)
 	ur.GET("/:id/eligibility", s.userService.GetStudentEligibilityList)
 
 	student := s.router.Group("/users/students")

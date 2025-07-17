@@ -48,26 +48,19 @@ func (q *Queries) BatchGetEligibilityMetaData(ctx context.Context, studentids []
 
 const createStudent = `-- name: CreateStudent :one
 INSERT INTO students (
-    user_id, courses, biometric_template
+    user_id
 ) VALUES (
-    $1, $2, $3
-) RETURNING id, user_id, courses, biometric_template, updated_at
+    $1
+) RETURNING id, user_id, courses, updated_at
 `
 
-type CreateStudentParams struct {
-	UserID            int64    `json:"user_id"`
-	Courses           []string `json:"courses"`
-	BiometricTemplate string   `json:"biometric_template"`
-}
-
-func (q *Queries) CreateStudent(ctx context.Context, arg CreateStudentParams) (Student, error) {
-	row := q.queryRow(ctx, q.createStudentStmt, createStudent, arg.UserID, pq.Array(arg.Courses), arg.BiometricTemplate)
+func (q *Queries) CreateStudent(ctx context.Context, userID int64) (Student, error) {
+	row := q.queryRow(ctx, q.createStudentStmt, createStudent, userID)
 	var i Student
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		pq.Array(&i.Courses),
-		&i.BiometricTemplate,
 		&i.UpdatedAt,
 	)
 	return i, err
@@ -82,7 +75,7 @@ func (q *Queries) DeleteStudent(ctx context.Context, id int64) (sql.Result, erro
 }
 
 const getStudentByID = `-- name: GetStudentByID :one
-SELECT id, user_id, courses, biometric_template, updated_at FROM students WHERE id = $1
+SELECT id, user_id, courses, updated_at FROM students WHERE id = $1
 `
 
 func (q *Queries) GetStudentByID(ctx context.Context, id int64) (Student, error) {
@@ -92,14 +85,13 @@ func (q *Queries) GetStudentByID(ctx context.Context, id int64) (Student, error)
 		&i.ID,
 		&i.UserID,
 		pq.Array(&i.Courses),
-		&i.BiometricTemplate,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getStudentByUserID = `-- name: GetStudentByUserID :one
-SELECT id, user_id, courses, biometric_template, updated_at FROM students WHERE user_id = $1
+SELECT id, user_id, courses, updated_at FROM students WHERE user_id = $1
 `
 
 func (q *Queries) GetStudentByUserID(ctx context.Context, userID int64) (Student, error) {
@@ -109,7 +101,6 @@ func (q *Queries) GetStudentByUserID(ctx context.Context, userID int64) (Student
 		&i.ID,
 		&i.UserID,
 		pq.Array(&i.Courses),
-		&i.BiometricTemplate,
 		&i.UpdatedAt,
 	)
 	return i, err
@@ -119,7 +110,7 @@ const updateStudentCourses = `-- name: UpdateStudentCourses :one
 UPDATE students
 SET courses = $2, updated_at = now()
 WHERE id = $1
-RETURNING id, user_id, courses, biometric_template, updated_at
+RETURNING id, user_id, courses, updated_at
 `
 
 type UpdateStudentCoursesParams struct {
@@ -134,7 +125,6 @@ func (q *Queries) UpdateStudentCourses(ctx context.Context, arg UpdateStudentCou
 		&i.ID,
 		&i.UserID,
 		pq.Array(&i.Courses),
-		&i.BiometricTemplate,
 		&i.UpdatedAt,
 	)
 	return i, err

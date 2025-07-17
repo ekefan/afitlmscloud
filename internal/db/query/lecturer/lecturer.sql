@@ -1,8 +1,8 @@
 -- name: CreateLecturer :one
 INSERT INTO lecturers (
-    user_id, biometric_template, courses, courses_actively_teaching
+    user_id
 ) VALUES (
-    $1, $2, $3, $4
+    $1
 ) RETURNING *;
 
 -- name: GetLecturerByID :one

@@ -4,40 +4,42 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
-	"net/url"
+	"slices"
 	"time"
 
-	"github.com/ekefan/afitlmscloud/internal/repository"
-	"github.com/gorilla/websocket"
+	"github.com/ekefan/afitlmscloud/services/user"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
-// Define the structure of the initial HTTP POST request payload for FastAPI
+func init() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("rolesonly", rolesOnly)
+	}
+}
+
+var (
+	ErrRolesViolatesRolesPolicy = errors.New("roles violates the role policy")
+	ErrNoBioMetricTemplate      = errors.New("students or lecturers must enroll with a biometric template")
+)
+
 type FastAPIEnrollInitialRequest struct {
-	ID       int64    `json:"id"`
-	Roles    []string `json:"roles"`
-	Username string   `json:"username"`
-	UniqueID string   `json:"unique_id"`
+	Fullname string   `json:"fullname" binding:"required"`
+	Email    string   `json:"email" binding:"email,required"`
+	SchId    string   `json:"sch_id" binding:"required"`
+	Roles    []string `json:"roles" binding:"required"`
 }
 
-// Define the structure of the initial HTTP POST response from FastAPI
-type FastAPIEnrollInitialResponse struct {
-	Message             string `json:"message"`
-	EnrollmentSessionID string `json:"enrollment_session_id"`
-	WebsocketURL        string `json:"websocket_url"`
-}
-
-// Define the structure of WebSocket messages from FastAPI
 type WebSocketMessage struct {
 	Type      string          `json:"type"` // e.g., "status", "COMPLETED", "FAILED"
 	Data      json.RawMessage `json:"data"` // Raw JSON to be parsed based on Type
 	Timestamp float64         `json:"timestamp"`
 }
 
-// Data for "status" type messages
 type WebSocketStatusData struct {
 	Stage   string `json:"stage"`
 	Details string `json:"details"`
@@ -59,26 +61,27 @@ type WebSocketFailedData struct {
 	Details map[string]string `json:"details"` // Optional error details
 }
 
-// EnrollmentService is a service that handles enrollment operations.
 type EnrollmentService struct {
 	FastAPIBaseURL string
-	userRepo       repository.UserRespository
+	userService    *user.UserService
 }
 
-// NewEnrollmentService creates a new instance of EnrollmentService.
-func NewEnrollmentService(fastAPIBaseURL string, userRepo repository.UserRespository) *EnrollmentService {
+func NewEnrollmentService(fastAPIBaseURL string, us *user.UserService) *EnrollmentService {
 	return &EnrollmentService{
 		FastAPIBaseURL: fastAPIBaseURL,
-		userRepo:       userRepo,
+		userService:    us,
 	}
 }
 
 func (es *EnrollmentService) enroll(ctx context.Context, req FastAPIEnrollInitialRequest) (WebSocketCompletedData, error) {
-	slog.Info("Initiating enrollment for:", "user", req.Username, "unique id", req.UniqueID)
+	slog.Info("Initiating enrollment for:", "user", req.Fullname, "unique id", req.SchId)
 
-	initialPayload := FastAPIEnrollInitialRequest{
-		Username: req.Username,
-		UniqueID: req.UniqueID,
+	initialPayload := struct {
+		UniqueId string `json:"unique_id" binding:"required"`
+		Username string `json:"username" binding:"required"`
+	}{
+		Username: req.Fullname,
+		UniqueId: req.SchId,
 	}
 
 	jsonPayload, err := json.Marshal(initialPayload)
@@ -103,117 +106,129 @@ func (es *EnrollmentService) enroll(ctx context.Context, req FastAPIEnrollInitia
 	}
 	defer httpResponse.Body.Close()
 
+	slog.Info("response", "data", httpResponse.StatusCode)
 	if httpResponse.StatusCode != http.StatusOK {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(httpResponse.Body)
-
 		return WebSocketCompletedData{}, fmt.Errorf("FastAPI initial enrollment endpoint returned non-OK status: %s, Body: %s", httpResponse.Status, buf.String())
 	}
 
-	var initialFastAPIResponse FastAPIEnrollInitialResponse
-	err = json.NewDecoder(httpResponse.Body).Decode(&initialFastAPIResponse)
+	var initialResponse struct {
+		Message string `json:"message"`
+		JobID   string `json:"job_id"`
+		PollURL string `json:"poll_url"`
+	}
+	err = json.NewDecoder(httpResponse.Body).Decode(&initialResponse)
 	if err != nil {
-		slog.Error("Failed to decode initial FastAPI response", "error", err)
-		return WebSocketCompletedData{}, fmt.Errorf("failed to decode initial FastAPI response: %w", err)
+		return WebSocketCompletedData{}, fmt.Errorf("failed to decode response: %w", err)
 	}
+	return es.pollForCompletion(ctx, initialResponse.JobID)
+}
 
-	slog.Info("FastAPI initiated enrollment:", "initmessage", initialFastAPIResponse.Message, "Session ID", initialFastAPIResponse.EnrollmentSessionID, "WebSocket_URL", initialFastAPIResponse.WebsocketURL)
+func (es *EnrollmentService) pollForCompletion(ctx context.Context, jobID string) (WebSocketCompletedData, error) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-	wsURL, err := url.Parse(initialFastAPIResponse.WebsocketURL)
-	if err != nil {
-		slog.Error("Invalid WebSocket URL from FastAPI", "error", err)
-		return WebSocketCompletedData{}, fmt.Errorf("invalid WebSocket URL received from FastAPI: %w", err)
-	}
+	statusURL := fmt.Sprintf("%s/cs/enroll/status/%s", es.FastAPIBaseURL, jobID)
 
-	dialer := websocket.Dialer{
-		HandshakeTimeout: 10 * time.Second,
-	}
+	for {
+		select {
+		case <-ctx.Done():
+			return WebSocketCompletedData{}, ctx.Err()
+		case <-ticker.C:
+			resp, err := http.Get(statusURL)
+			if err != nil {
+				continue // Keep polling
+			}
 
-	conn, _, err := dialer.DialContext(ctx, wsURL.String(), nil)
-	if err != nil {
-		slog.Error("Failed to connect to WebSocket", "url", wsURL.String(), "error", err)
-		return WebSocketCompletedData{}, fmt.Errorf("failed to connect to WebSocket %s: %w", wsURL.String(), err)
-	}
-	defer conn.Close()
+			var status struct {
+				Status   string `json:"status"`
+				Success  bool   `json:"success"`
+				UID      string `json:"uid"`
+				Username string `json:"username"`
+				UniqueID string `json:"unique_id"`
+				Message  string `json:"message"`
+			}
 
-	log.Printf("Connected to WebSocket: %s", wsURL.String())
+			if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+				resp.Body.Close()
+				continue
+			}
+			resp.Body.Close()
 
-	enrollmentResultChan := make(chan *WebSocketCompletedData)
-	errorChan := make(chan error, 1)
-
-	go func() {
-		defer close(enrollmentResultChan)
-		defer close(errorChan)
-
-		for {
-			select {
-			case <-ctx.Done():
-				errorChan <- ctx.Err()
-				return
-			default:
-				_, message, err := conn.ReadMessage()
-				if err != nil {
-					if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-						log.Printf("WebSocket closed normally: %v", err)
-						errorChan <- fmt.Errorf("WebSocket closed normally: %w", err)
-					} else {
-						log.Printf("WebSocket read error: %v", err)
-						errorChan <- fmt.Errorf("WebSocket read error: %w", err)
-					}
-					return
-				}
-
-				var wsMsg WebSocketMessage
-				if err := json.Unmarshal(message, &wsMsg); err != nil {
-					log.Printf("Failed to unmarshal WebSocket message: %v, message: %s", err, string(message))
-					continue
-				}
-
-				log.Printf("Received WS message type: %s, Data: %s", wsMsg.Type, string(wsMsg.Data))
-
-				switch wsMsg.Type {
-				case "STATUS":
-				case "COMPLETED":
-					var completedData WebSocketCompletedData
-					if err := json.Unmarshal(wsMsg.Data, &completedData); err != nil {
-						log.Printf("Failed to unmarshal WS completed data: %v", err)
-						errorChan <- fmt.Errorf("failed to parse completion data: %w", err)
-						return
-					}
-					log.Printf("Enrollment COMPLETE for UID: %s, Message: %s", completedData.UID, completedData.Message)
-					enrollmentResultChan <- &WebSocketCompletedData{
-						Success:  completedData.Success,
-						Message:  completedData.Message,
-						UID:      completedData.UID,
-						Username: completedData.Username,
-						UniqueID: completedData.UniqueID,
-					}
-					return
-				case "FAILED":
-					var failedData WebSocketFailedData
-					if err := json.Unmarshal(wsMsg.Data, &failedData); err != nil {
-						log.Printf("Failed to unmarshal WS failed data: %v", err)
-						errorChan <- fmt.Errorf("failed to parse failure data: %w", err)
-						return
-					}
-					log.Printf("Enrollment FAILED: %s", failedData.Message)
-					errorChan <- fmt.Errorf("enrollment failed: %s", failedData.Message)
-					return
-				default:
-					log.Printf("Received unknown WS message type: %s", wsMsg.Type)
-				}
+			switch status.Status {
+			case "COMPLETED":
+				return WebSocketCompletedData{
+					Success:  status.Success,
+					Message:  status.Message,
+					UID:      status.UID,
+					Username: status.Username,
+					UniqueID: status.UniqueID,
+				}, nil
+			case "FAILED":
+				return WebSocketCompletedData{}, fmt.Errorf("enrollment failed: %s", status.Message)
+				// Continue polling for other statuses
 			}
 		}
-	}()
-
-	select {
-	case res := <-enrollmentResultChan:
-		return *res, nil
-	case err := <-errorChan:
-		slog.Error("Error during WebSocket communication", "error", err)
-		return WebSocketCompletedData{}, err
-	case <-ctx.Done():
-		slog.Error("enrollment process timed out or was cancelled", "error", err) // Context timeout/cancellation
-		return WebSocketCompletedData{}, fmt.Errorf("enrollment process timed out or was cancelled: %w", ctx.Err())
 	}
+}
+
+func (es *EnrollmentService) validateUserRolesPolicy(roles Roles) error {
+	if slices.Contains(roles, rolesToString(studentRole)) &&
+		slices.Contains(roles, rolesToString(qaAdminRole)) {
+		return ErrRolesViolatesRolesPolicy
+	}
+	return nil
+}
+
+type Roles []string
+
+const (
+	// roles
+	studentRole = iota
+	lecturerRole
+	qaAdminRole
+	courseAdminRole
+)
+
+const (
+	// string rep of roles
+	StudentRole     = "student"
+	LecturerRole    = "lecturer"
+	QaAdminRole     = "qa_admin"
+	CourseAdminRole = "course_admin"
+)
+
+func rolesToString(role int) string {
+	switch role {
+	case studentRole:
+		return "student"
+	case lecturerRole:
+		return "lecturer"
+	case qaAdminRole:
+		return "qa_admin"
+	case courseAdminRole:
+		return "course_admin"
+	}
+	return ""
+}
+
+var allowedRoles = map[string]bool{
+	"student":      true,
+	"lecturer":     true,
+	"qa_admin":     true,
+	"course_admin": true,
+}
+
+func rolesOnly(fl validator.FieldLevel) bool {
+	roles, ok := fl.Field().Interface().([]string)
+	if !ok {
+		return false
+	}
+	for _, role := range roles {
+		if !allowedRoles[role] {
+			return false
+		}
+	}
+	return true
 }
